@@ -43,6 +43,7 @@ include_directories( ${MSDK_LIB_ROOT}/pak/mpeg2/include )
 include_directories( ${MSDK_LIB_ROOT}/genx/h264_encode/isa )
 include_directories( ${MSDK_LIB_ROOT}/fei/h264_preenc )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/asc/include )
+include_directories( ${MSDK_STUDIO_ROOT}/mfx_lib/lpla)
 # umc codec
 include_directories( ${MSDK_UMC_ROOT}/codec/brc/include )
 include_directories( ${MSDK_UMC_ROOT}/codec/jpeg_common/include )
@@ -93,6 +94,7 @@ list( APPEND sources
     hevc/agnostic/base/hevcehw_base_roi.cpp
     hevc/agnostic/base/hevcehw_base_task.cpp
     hevc/agnostic/base/hevcehw_base_weighted_prediction.cpp
+    hevc/agnostic/base/hevcehw_base_enctools.cpp
     hevc/agnostic/g12/hevcehw_g12_caps.cpp
     hevc/agnostic/g12/hevcehw_g12_rext.cpp
     hevc/agnostic/g12/hevcehw_g12_scc.cpp

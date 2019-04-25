@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- enctools_lib.vcxproj specific settings -->
+  <PropertyGroup Label="enc_tools settings">
+    <MfxUsingSettings>enctool_libs;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+      $(MfxIppIncludeDir);
+      $(MSDK_API_ROOT)\include;
+      $(MSDK_STUDIO_ROOT)\shared\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+      $(MSDK_STUDIO_ROOT)\enctools\aenc\include;
+      $(MSDK_STUDIO_ROOT)\enctools\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+  </PropertyGroup>
+<!-- End of enctools.vcxproj specific settings -->
+</Project>

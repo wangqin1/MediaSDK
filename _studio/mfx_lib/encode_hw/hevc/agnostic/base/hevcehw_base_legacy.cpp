@@ -1404,7 +1404,8 @@ void Legacy::Reset(const FeatureBlocks& blocks, TPushR Push)
         if (bTlActive)
         {
             // calculate temporal layer for next frame
-            tempLayerIdx = defOld.base.GetTId(defOld, m_frameOrder + 1);
+            mfxGopHints GopHints = {};
+            tempLayerIdx = defOld.base.GetTId(defOld, m_frameOrder + 1, GopHints);
             changeTScalLayers = numTlOld != numTlNew;
         }
 
@@ -1553,7 +1554,7 @@ void Legacy::AllocTask(const FeatureBlocks& /*blocks*/, TPushAT Push)
 void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
 {
     Push(BLK_InitTask
-        , [](
+        , [this](
             mfxEncodeCtrl* pCtrl
             , mfxFrameSurface1* pSurf
             , mfxBitstream* pBs
@@ -1572,6 +1573,7 @@ void Legacy::InitTask(const FeatureBlocks& /*blocks*/, TPushIT Push)
         MFX_CHECK(pSurf, MFX_ERR_NONE);
 
         tpar.pSurfIn = pSurf;
+        tpar.DisplayOrder = ++m_frameOrderTmp;
 
         if (pCtrl)
             tpar.ctrl = *pCtrl;
@@ -1610,23 +1612,25 @@ void Legacy::PreReorderTask(const FeatureBlocks& /*blocks*/, TPushPreRT Push)
         m_frameOrder = dflts.base.GetFrameOrder(dflts, s_task, m_frameOrder);
 
         auto sts = dflts.base.GetPreReorderInfo(
-            dflts, task, task.pSurfIn, &task.ctrl, m_lastIDR, m_prevTask.PrevIPoc, m_frameOrder);
+            dflts, task, task.pSurfIn, &task.ctrl, { LastKeyFrameInfo.lastIDROrder, LastKeyFrameInfo.lastIPOrder, m_prevTask.LastKeyFrameInfo.lastIPoc}, m_frameOrder, task.GopHints);
         MFX_CHECK_STS(sts);
 
         if (par.mfx.EncodedOrder)
         {
-            auto MaxReorder     = Glob::Reorder::Get(global).BufferSize;
+            auto BufferSize     = Glob::Reorder::Get(global).BufferSize;
+            auto MaxReorder     = Glob::Reorder::Get(global).MaxReorder;
             bool bFrameFromPast = m_frameOrder && (m_frameOrder < m_prevTask.DisplayOrder);
 
             MFX_CHECK(!bFrameFromPast || ((m_prevTask.DisplayOrder - m_frameOrder) <= MaxReorder), MFX_ERR_UNDEFINED_BEHAVIOR);
-            MFX_CHECK(m_frameOrder <= (m_prevTask.EncodedOrder + 1 + MaxReorder), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(m_frameOrder <= (m_prevTask.EncodedOrder + 1 + BufferSize), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(isValid(m_prevTask.DPB.After[0]) || IsIdr(task.FrameType), MFX_ERR_UNDEFINED_BEHAVIOR);
         }
         task.DisplayOrder = m_frameOrder;
-        task.PrevIPoc     = m_prevTask.PrevIPoc;
+        task.LastKeyFrameInfo = m_prevTask.LastKeyFrameInfo;
         
-        SetIf(m_lastIDR, IsIdr(task.FrameType), m_frameOrder);
-        SetIf(task.PrevIPoc, IsI(task.FrameType), task.POC);
+        SetIf(LastKeyFrameInfo.lastIDROrder, IsIdr(task.FrameType), m_frameOrder);
+        SetIf(task.LastKeyFrameInfo.lastIPoc, IsI(task.FrameType), task.POC);
+        SetIf(LastKeyFrameInfo.lastIPOrder, IsI(task.FrameType) || IsP(task.FrameType), m_frameOrder);
 
         return MFX_ERR_NONE;
     });
@@ -2329,7 +2333,7 @@ void Legacy::ConfigureTask(
     task.FrameType &= ~(MFX_FRAMETYPE_P * task.isLDB);
     task.FrameType |= (MFX_FRAMETYPE_B * task.isLDB);
 
-    task.PrevIPoc = m_prevTask.PrevIPoc;
+    task.LastKeyFrameInfo = m_prevTask.LastKeyFrameInfo;
     task.PrevRAP = m_prevTask.PrevRAP;
     task.EncodedOrder = m_prevTask.EncodedOrder + 1;
 
@@ -2364,7 +2368,7 @@ void Legacy::ConfigureTask(
 
     if (isRef)
     {
-        task.PrevIPoc = isI * task.POC + !isI * task.PrevIPoc;
+        task.LastKeyFrameInfo.lastIPoc = isI * task.POC + !isI * task.LastKeyFrameInfo.lastIPoc;
 
         UpdateDPB(dflts, task, task.DPB.After, pExtListCtrl);
 
@@ -3097,7 +3101,7 @@ void Legacy::SetSTRPS(
     bool      bTL        = dflts.base.GetNumTemporalLayers(dflts) > 1;
     mfxI32    nGops      = par.mfx.IdrInterval + !par.mfx.IdrInterval * 4;
     mfxI32    stDist     = std::min<mfxI32>(par.mfx.GopPicSize * nGops, 128);
-    mfxI32    lastIPoc   = 0;
+    mfxLastKeyFrameInfo m_LastKeyFrameInfo = {};
     bool      bDone      = false;
     mfxI32    i          = 0;
 
@@ -3114,8 +3118,10 @@ void Legacy::SetSTRPS(
     {
         {
             FrameBaseInfo fi;
-            auto sts = dflts.base.GetPreReorderInfo(dflts, fi, nullptr, nullptr, 0, lastIPoc, mfxU32(i));
+            mfxGopHints GopHints = {};
+            auto sts = dflts.base.GetPreReorderInfo(dflts, fi, nullptr, nullptr, m_LastKeyFrameInfo, mfxU32(i), GopHints);
             ThrowIf(!!sts, "failed at GetPreReorderInfo");
+            SetIf(m_LastKeyFrameInfo.lastIPOrder, !IsB(fi.FrameType), i);
 
             frames.push_back(StorageRW());
             frames.back().Insert(Task::Common::Key, new FrameBaseInfo(fi));
@@ -3190,7 +3196,7 @@ void Legacy::SetSTRPS(
                 ++pCurSet->WeightInGop;
             }
 
-            SetIf(lastIPoc, bI, cur->POC);
+            SetIf(m_LastKeyFrameInfo.lastIPoc, bI, cur->POC);
 
             DpbFrame tmp;
             (FrameBaseInfo&)tmp = *cur;
@@ -3445,7 +3451,9 @@ void SetDefaultBRC(
             , Bool2CO(
               !(   par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
                 || Legacy::IsSWBRC(par, pCO2)
-                || !defPar.caps.MbQpDataSupport)));
+                || !defPar.caps.MbQpDataSupport)
+                || (Legacy::IsEnctoolsLABRC(par) && defPar.caps.MbQpDataSupport)
+	      ));
 
         bool bSetWinBRC = pCO3->WinBRCSize || pCO3->WinBRCMaxAvgKbps;
 
@@ -4027,11 +4035,41 @@ mfxStatus Legacy::CheckCrops(
 
 bool Legacy::IsSWBRC(mfxVideoParam const & par, const mfxExtCodingOption2* pCO2)
 {
+#ifdef MFX_ENABLE_ENCTOOLS
+    const mfxExtEncToolsConfig *pCfg = ExtBuffer::Get(par);
+#endif
+
     return
-        (      pCO2 && IsOn(pCO2->ExtBRC)
+        (     (( pCO2 && IsOn(pCO2->ExtBRC) && pCO2->LookAheadDepth == 0)
+#ifdef MFX_ENABLE_ENCTOOLS
+            || (pCfg && IsOn(pCfg->BRC))
+#endif
+            )
             && (   par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
                 || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR))
         || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT;
+}
+
+bool Legacy::IsEnctoolsLABRC(const ExtBuffer::Param<mfxVideoParam>&par)
+{
+#ifdef MFX_ENABLE_ENCTOOLS
+    const mfxExtCodingOption2 * pCO2 = ExtBuffer::Get(par);
+    const mfxExtCodingOption3 * pCO3 = ExtBuffer::Get(par);
+    const mfxExtEncToolsConfig * pCfg = ExtBuffer::Get(par);
+
+    if (
+        (
+            ((par.mfx.GopRefDist == 2 || par.mfx.GopRefDist == 8)
+            && pCO2 && pCO2->ExtBRC == MFX_CODINGOPTION_ON && pCO2->LookAheadDepth > par.mfx.GopRefDist
+            && (pCO3 && pCO3->ScenarioInfo != MFX_SCENARIO_GAME_STREAMING)
+            )
+            || (pCfg && IsOn(pCfg->BRC) && pCO2 && pCO2->LookAheadDepth > par.mfx.GopRefDist)
+        )
+        && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    )
+        return true;
+#endif
+    return false;
 }
 
 bool CheckBufferSizeInKB(

@@ -46,6 +46,9 @@
 #if defined(MFX_ENABLE_HEVCE_ROI)
 #include "hevcehw_base_roi_lin.h"
 #endif
+#ifdef MFX_ENABLE_ENCTOOLS
+#include "hevcehw_base_enctools.h"
+#endif
 #include "hevcehw_base_max_frame_size_lin.h"
 #include "hevcehw_base_fei_lin.h"
 #include <algorithm>
@@ -96,6 +99,9 @@ Linux::Base::MFXVideoENCODEH265_HW::MFXVideoENCODEH265_HW(
     m_features.emplace_back(new ROI(FEATURE_ROI));
 #endif
     m_features.emplace_back(new MaxFrameSize(FEATURE_MAX_FRAME_SIZE));
+#if defined(MFX_ENABLE_ENCTOOLS)
+    m_features.emplace_back(new HevcEncTools(FEATURE_ENCTOOLS));
+#endif
 
     InternalInitFeatures(status, mode);
 

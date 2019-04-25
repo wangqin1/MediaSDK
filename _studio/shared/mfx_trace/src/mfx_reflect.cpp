@@ -42,6 +42,10 @@
 #include "mfxfeihevc.h"
 #endif
 
+#if defined(MFX_ENABLE_USER_ENCTOOLS)
+#include "mfxenctools.h"
+#endif
+
 #include "ts_typedef.h"
 
 #include <memory>

@@ -203,6 +203,7 @@ list( APPEND LIBS
   ${GENX_LIB}
   mfx_common
   mfx_common_hw
+  enctools_hw
   ${ASC_LIB}
   ${MCTF_LIB}
   vpp_hw

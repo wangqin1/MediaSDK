@@ -1,0 +1,51 @@
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props" />
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{A4BED5C9-AF18-4BC6-A881-4B32031D8ADD}</ProjectGuid>
+    <RootNamespace>enctoolslibvproj</RootNamespace>
+    <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(MSBuildThisFileDirectory)enctools_lib.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Building.props" />
+  <ItemGroup>
+    <ClInclude Include="aenc\include\asc_cpu_detect.h" />
+    <ClInclude Include="aenc\include\av1_scd.h" />
+    <ClInclude Include="include\mfx_enctools.h" />
+    <ClInclude Include="include\mfx_enctools_allocator.h" />
+    <ClInclude Include="include\mfx_enctools_brc.h" />
+    <ClInclude Include="include\mfx_enctools_defs.h" />
+    <ClInclude Include="include\mfx_enctools_lpla.h" />
+    <ClInclude Include="include\mfx_enctools_aenc.h" />
+    <ClInclude Include="include\mfx_enctools_utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="aenc\src\aenc.cpp" />
+    <ClCompile Include="aenc\src\av1_asc.cpp" />
+    <ClCompile Include="aenc\src\av1_asc_agop_tree.cpp" />
+    <ClCompile Include="aenc\src\av1_asc_tree.cpp" />
+    <ClCompile Include="enctools.cpp" />
+    <ClCompile Include="src\mfx_enctools_allocator.cpp" />
+    <ClCompile Include="src\mfx_enctools_brc.cpp" />
+    <ClCompile Include="src\mfx_enctools_common.cpp" />
+    <ClCompile Include="src\mfx_enctools_lpla.cpp" />
+    <ClCompile Include="src\mfx_enctools_aenc.cpp" />
+    <ClCompile Include="src\mfx_enctools_utils.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Footer.props" />
+</Project>

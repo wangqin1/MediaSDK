@@ -1416,3 +1416,23 @@ STRUCT(mfxExtAV1FilmGrainParam,
     FIELD_T(mfxU16, CrOffset)
 )
 #endif
+
+#if defined(MFX_ENABLE_USER_ENCTOOLS)
+STRUCT(mfxExtEncToolsConfig,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_S(mfxStructVersion,  Version)
+    FIELD_T(mfxU16, AdaptiveI)
+    FIELD_T(mfxU16, AdaptiveB)
+    FIELD_T(mfxU16, AdaptiveRefP)
+    FIELD_T(mfxU16, AdaptiveRefB)
+    FIELD_T(mfxU16, SceneChange)
+    FIELD_T(mfxU16, AdaptiveLTR)
+    FIELD_T(mfxU16, AdaptivePyramidQuantP)
+    FIELD_T(mfxU16, AdaptivePyramidQuantB)
+    FIELD_T(mfxU16, AdaptiveQuantMatrices)
+    FIELD_T(mfxU16, BRCBufferHints)
+    FIELD_T(mfxU16, BRC)
+    FIELD_T(mfxU16, reserved) /* Fixed size array */
+)
+#endif
+

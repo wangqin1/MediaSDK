@@ -1337,6 +1337,17 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     m_pipelineParam[0].input_color_properties.chroma_sample_location  = VA_CHROMA_SITING_UNKNOWN;
     m_pipelineParam[0].output_color_properties.chroma_sample_location = VA_CHROMA_SITING_UNKNOWN;
 
+    #if (MFX_VERSION >= 1033)
+    mfxU32 interpolation[4] = {
+        VA_FILTER_INTERPOLATION_DEFAULT,            // MFX_INTERPOLATION_DEFAULT                = 0,
+        VA_FILTER_INTERPOLATION_NEAREST_NEIGHBOR,   // MFX_INTERPOLATION_NEAREST_NEIGHBOR       = 1,
+        VA_FILTER_INTERPOLATION_BILINEAR,           // MFX_INTERPOLATION_BILINEAR               = 2,
+        VA_FILTER_INTERPOLATION_ADVANCED            // MFX_INTERPOLATION_ADVANCED               = 3
+    };
+    mfxSts = (pParams->interpolationMethod > MFX_INTERPOLATION_ADVANCED) ? MFX_ERR_UNSUPPORTED : MFX_ERR_NONE;
+    MFX_CHECK_STS(mfxSts);
+#endif
+
     /* Scaling params */
     switch (pParams->scalingMode)
     {
@@ -1348,6 +1359,9 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             *  If scaling ratio is less than 1/16 -> bilinear
             */
         m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_DEFAULT;
+#if (MFX_VERSION >= 1033)
+        m_pipelineParam[0].filter_flags |= interpolation[pParams->interpolationMethod];
+#endif
         break;
     case MFX_SCALING_MODE_QUALITY:
         /*  VA_FILTER_SCALING_HQ means the following:
@@ -1355,6 +1369,10 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             *  For all other cases, AVS is used.
             */
         m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_HQ;
+#if (MFX_VERSION >= 1033)
+        m_pipelineParam[0].filter_flags |= interpolation[pParams->interpolationMethod];
+        mfxSts = ((pParams->interpolationMethod == MFX_INTERPOLATION_DEFAULT) || (pParams->interpolationMethod == MFX_INTERPOLATION_ADVANCED)) ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
+#endif
         break;
     case MFX_SCALING_MODE_DEFAULT:
     default:
@@ -1368,8 +1386,13 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             /* Force AVS by default for all platforms except BXT */
             m_pipelineParam[0].filter_flags |= VA_FILTER_SCALING_HQ;
         }
+#if (MFX_VERSION >= 1033)
+        m_pipelineParam[0].filter_flags |= interpolation[pParams->interpolationMethod];
+        mfxSts = ((pParams->interpolationMethod == MFX_INTERPOLATION_DEFAULT) || (pParams->interpolationMethod == MFX_INTERPOLATION_ADVANCED)) ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
+#endif
         break;
     }
+    MFX_CHECK_STS(mfxSts);
 
 #if (MFX_VERSION >= 1025)
         uint8_t& chromaSitingMode = m_pipelineParam[0].input_color_properties.chroma_sample_location;

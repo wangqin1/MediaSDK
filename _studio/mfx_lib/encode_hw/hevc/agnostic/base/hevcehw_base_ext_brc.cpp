@@ -25,6 +25,11 @@
 #include "mfx_brc_common.h"
 #include "mfx_h265_encode_hw_brc.h"
 
+#ifdef MFX_ENABLE_ENCTOOLS
+#include "mfxenctools-int.h"
+#include "hevcehw_base_enctools.h"
+#endif
+
 using namespace HEVCEHW;
 using namespace HEVCEHW::Base;
 
@@ -310,6 +315,7 @@ void ExtBRC::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         bool                       bInternalBRC = IsOn(CO2.ExtBRC) && !brc.pthis && !m_brc.pthis;
         bool                       bExternalBRC = IsOn(CO2.ExtBRC) && brc.pthis && !m_brc.pthis;
 
+#if 0
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
         {
             auto sts = VmeBrcWrapper::Create(m_brc);
@@ -375,6 +381,16 @@ void ExtBRC::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
                 });
             }
         }
+#endif
+
+#ifdef MFX_ENABLE_ENCTOOLS
+        mfxExtEncToolsConfig* pConfig = ExtBuffer::Get(par);
+        bool bEncTools = (pConfig) ?
+            IsEncToolsOptOn(*pConfig, CO3.ScenarioInfo == MFX_SCENARIO_GAME_STREAMING) :
+            false;
+        if (bEncTools)
+            bInternalBRC = bExternalBRC = false;
+#endif
 
         if (bInternalBRC)
         {

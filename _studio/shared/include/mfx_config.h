@@ -23,6 +23,7 @@
 
 #include "mfxdefs.h"
 
+#define MFX_ENABLE_USER_ENCTOOLS
 #ifdef MFX_VA
     #if defined(LINUX32) || defined(LINUX64)
         #include <va/va_version.h>
@@ -126,5 +127,13 @@
 #define CMAPIUPDATE
 
 #define MFX_ENABLE_HEVCEHW_REFACTORING
+
+#ifdef MFX_ENABLE_USER_ENCTOOLS
+    #define MFX_ENABLE_ENCTOOLS
+    #define MFX_ENABLE_LP_LOOKAHEAD
+    #if defined(_WIN32) || defined(_WIN64)
+        #define MFX_ENABLE_ENCTOOLS_LPLA
+    #endif
+#endif
 
 #endif // _MFX_CONFIG_H_

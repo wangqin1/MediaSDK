@@ -182,12 +182,13 @@ void FEI::FrameSubmit(const FeatureBlocks& /*blocks*/, TPushFS Push)
                         , Glob::Defaults::Get(global));
                 FrameBaseInfo fi;
 
-                auto sts = ccpar.base.GetPreReorderInfo(ccpar, fi, pSurf, pCtrl, m_lastIDR, m_prevIPoc, m_frameOrder);
-                MFX_CHECK_STS(sts);
+                mfxGopHints GopHints = {};
+                auto sts = ccpar.base.GetPreReorderInfo(ccpar, fi, pSurf, pCtrl, LastKeyFrameInfo, m_frameOrder, GopHints);
+		MFX_CHECK_STS(sts);
 
                 SetIf(m_frameOrder, !!ccpar.mvp.mfx.EncodedOrder, pSurf->Data.FrameOrder);
-                SetIf(m_lastIDR, IsIdr(fi.FrameType), m_frameOrder);
-                SetIf(m_prevIPoc, IsI(fi.FrameType), fi.POC);
+                SetIf(LastKeyFrameInfo.lastIDROrder, IsIdr(fi.FrameType), m_frameOrder);
+                SetIf(LastKeyFrameInfo.lastIPoc, IsI(fi.FrameType), fi.POC);
 
                 ++m_frameOrder;
 

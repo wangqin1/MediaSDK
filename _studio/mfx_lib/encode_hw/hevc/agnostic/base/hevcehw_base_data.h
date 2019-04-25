@@ -28,6 +28,10 @@
 #include "ehw_resources_pool.h"
 #include "ehw_device.h"
 #include <vector>
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined (MFX_ENABLE_ENCTOOLS_LPLA) || defined (MFX_ENABLE_ENCTOOLS)
+#include "mfx_lp_lookahead.h"
+#endif
+
 
 namespace HEVCEHW
 {
@@ -755,6 +759,31 @@ namespace Base
         , REC_READY = 2
     };
 
+    struct mfxLastKeyFrameInfo {
+        mfxU32              lastIDROrder;
+        mfxU32              lastIPOrder;
+        mfxI32              lastIPoc;
+    };
+
+    struct mfxGopHints {
+        mfxU32              MiniGopSize = 0;
+        mfxU16              FrameType = 0;
+        mfxU32              QPModulaton = 0;
+        /* Scene Change parameter */
+        mfxU16              SceneChange = 0;
+        /* Maps */
+        mfxU16              PersistenceMapNZ;
+        mfxU16              PersistenceMap[16 * 8];
+    };
+
+    struct mfxBRCHints {
+        /* Look ahead parameters */
+        mfxU32              LaAvgEncodedBits = 0;         /* Average size of encoded Lookahead frames in bits */
+        mfxU32              LaCurEncodedBits = 0;         /* Size of encoded Lookahead frame at current frame location in bits */
+        mfxU16              LaDistToNextI = 0;            /* First I Frame in Lookahead frames (0 if not found) */
+    };
+
+
     struct TaskCommonPar
         : DpbFrame
     {
@@ -772,6 +801,13 @@ namespace Base
         Resource            CUQP;
         mfxHDLPair          HDLRaw              = {};
         bool                bCUQPMap            = false;
+#if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA) || defined(MFX_ENABLE_ENCTOOLS)
+        mfxLplastatus       LplaStatus          = {};
+#endif
+	mfxGopHints         GopHints            = {};
+        mfxBRCHints         BrcHints            = {};
+        mfxU16              etQpMapNZ           = 0;
+        mfxI16              etQpMap[16 * 8]     = {};
         bool                bForceSync          = false;
         bool                bSkip               = false;
         bool                bResetBRC           = false;
@@ -779,7 +815,7 @@ namespace Base
         bool                bRecode             = false;
         bool                bForceLongStartCode = false;
         IntraRefreshState   IRState             = {};
-        mfxI32              PrevIPoc            = -1;
+        mfxLastKeyFrameInfo LastKeyFrameInfo    = {};
         mfxI32              PrevRAP             = -1;
         mfxU16              NumRecode           = 0;
         mfxI8               QpY                 = 0;
@@ -1030,6 +1066,7 @@ namespace Base
         : CallChain<TTaskIt, const DpbArray&, TTaskIt, TTaskIt, bool>
     {
         mfxU16 BufferSize = 0;
+        mfxU16 MaxReorder = 0;
         NotNull<DpbArray*> DPB;
 
         using TBaseCC = CallChain<TTaskIt, const DpbArray&, TTaskIt, TTaskIt, bool>;
@@ -1152,13 +1189,15 @@ namespace Base
             mfxU16 // FrameType
             , const Defaults::Param&
             , mfxU32//DisplayOrder
-            , mfxU32>; //LastIDR
+            , mfxGopHints //adaptive GOP hints
+            , mfxLastKeyFrameInfo>; //LastIDR & LastIP
         TGetFrameType GetFrameType;
 
         using TGetPLayer = CallChain<
             mfxU8 //layer
             , const Defaults::Param&
-            , mfxU32>; //order
+            , mfxU32 //order
+            , mfxGopHints>; //adaptive GOP hints
         TGetPLayer GetPLayer;
         using TGetTId = TGetPLayer;
         TGetTId GetTId;
@@ -1213,9 +1252,10 @@ namespace Base
             , FrameBaseInfo&
             , const mfxFrameSurface1*   //pSurfIn
             , const mfxEncodeCtrl*      //pCtrl
-            , mfxU32                    //prevIDROrder
-            , mfxI32                    //prevIPOC
-            , mfxU32>;                  //frameOrder
+            , mfxLastKeyFrameInfo       //prevIDROrder & prevIPOC & prevIPOrder
+            , mfxU32                    //frameOrder
+            , mfxGopHints>;              //adaptive GOP hints
+
         TGetPreReorderInfo GetPreReorderInfo; // fill all info available at pre-reorder
 
         using TGetFrameNumRefActive = CallChain<
@@ -1323,6 +1363,7 @@ namespace Base
         , FEATURE_UNITS_INFO
         , FEATURE_FEI
         , FEATURE_RECON_INFO
+        , FEATURE_ENCTOOLS
         , NUM_FEATURES
     };
 
@@ -1375,6 +1416,7 @@ namespace Base
         using Defaults            = StorageVar<__LINE__ - _KD, Base::Defaults>;
         using PriorityPar         = StorageVar<__LINE__ - _KD, Base::PriorityParam>;
         static const StorageR::TKey ReservedKey0 = __LINE__ - _KD;
+        static const StorageR::TKey TaskManagerKey = __LINE__ - _KD;
         static const StorageR::TKey NUM_KEYS = __LINE__ - _KD;
     };
 

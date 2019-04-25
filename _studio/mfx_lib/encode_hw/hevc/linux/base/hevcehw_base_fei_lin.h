@@ -62,8 +62,7 @@ protected:
     virtual void PostReorderTask(const FeatureBlocks& blocks, TPushPostRT Push) override;
     virtual void InitAlloc(const FeatureBlocks& blocks, TPushIA Push) override;
 
-    mfxU32 m_lastIDR     = 0;
-    mfxI32 m_prevIPoc    = 0;
+    mfxLastKeyFrameInfo LastKeyFrameInfo = {};
     mfxU32 m_frameOrder  = 0;
 };
 

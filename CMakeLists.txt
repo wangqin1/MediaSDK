@@ -22,7 +22,6 @@ cmake_minimum_required( VERSION 3.6 )
 
 cmake_policy(SET CMP0048 NEW) # version handled by project()
 
-
 # Througout this project MFX_VERSION refers to uAPI version and MEDIA_VERSION refers to product version
 set(MEDIA_VERSION 20.3)
 set(MEDIA_VERSION_STR "${MEDIA_VERSION}.pre${MEDIA_VERSION_EXTRA}" CACHE STRING "" FORCE)
@@ -52,6 +51,8 @@ if(NOT DEFINED ENV{MFX_HOME} )
 else()
   set( MFX_HOME $ENV{MFX_HOME} )
 endif()
+
+option( MFX_ENABLE_USER_ENCTOOLS "Enable encoding tools?" ON )
 
 option( ENABLE_OPENCL "Build targets dependent on OpenCL?" ON )
 
