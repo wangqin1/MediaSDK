@@ -54,10 +54,9 @@ ifneq ($(filter MFX_O MFX_O_MR1, $(MFX_ANDROID_VERSION)),)
   MFX_CFLAGS += -DMFX_VERSION=1026
 else ifneq ($(filter MFX_P, $(MFX_ANDROID_VERSION)),)
   # CPLib PAVP implementation
-  # It requires minimum API version 1.30
   MFX_CFLAGS += \
     -DMFX_ENABLE_CPLIB \
-    -DMFX_VERSION=1030
+    -DMFX_VERSION=1033
 else
   MFX_CFLAGS += \
     -DMFX_ENABLE_CPLIB \

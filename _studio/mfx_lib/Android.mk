@@ -60,6 +60,7 @@ MFX_LOCAL_SRC_FILES_HW += \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_parser.cpp \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_roi.cpp \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_task.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_recon_info.cpp \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_weighted_prediction.cpp \
     mfx_lib/encode_hw/hevc/agnostic/g12/hevcehw_g12_caps.cpp \
     mfx_lib/encode_hw/hevc/agnostic/g12/hevcehw_g12_rext.cpp \
@@ -75,6 +76,7 @@ MFX_LOCAL_SRC_FILES_HW += \
     mfx_lib/encode_hw/hevc/linux/base/hevcehw_base_weighted_prediction_lin.cpp \
     mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_lin.cpp \
     mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_rext_lin.cpp \
+    mfx_lib/encode_hw/hevc/linux/g12/hevcehw_g12_qp_modulation_lin.cpp \
     mfx_lib/encode_hw/shared/ehw_resources_pool.cpp \
     mfx_lib/encode_hw/shared/ehw_task_manager.cpp \
     mfx_lib/encode_hw/shared/ehw_device_vaapi.cpp \
