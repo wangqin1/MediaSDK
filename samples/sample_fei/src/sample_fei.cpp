@@ -64,8 +64,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-TargetKbps value] - target bitrate for VBR rate control\n"));
 #endif
     msdk_printf(MSDK_STRING("   [-num_active_P numRefs] - number of maximum allowed references for P frames (up to 4(default)); for PAK only limit is 16\n"));
-    msdk_printf(MSDK_STRING("   [-num_active_BL0 numRefs] - number of maximum allowed backward references for B frames (up to 4(default)); for PAK only limit is 16\n"));
-    msdk_printf(MSDK_STRING("   [-num_active_BL1 numRefs] - number of maximum allowed forward references for B frames (up to 2(default) for interlaced, 1(default) for progressive); for PAK only limit is 16\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_BL0 numRefs] - number of maximum allowed backward references for B frames (up to 4(default))\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_BL1 numRefs] - number of maximum allowed forward references for B frames (up to 2(default) for interlaced, 1(default) for progressive)\n"));
     msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-trellis value] - bitfield: 0 = default, 1 = off, 2 = on for I frames, 4 = on for P frames, 8 = on for B frames (ENCODE only) (default is 0)\n"));
     msdk_printf(MSDK_STRING("   [-preenc ds_strength] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
@@ -73,19 +73,23 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                            otherwise PREENC is used on downscaled (by VPP resize in ds_strength times) surfaces\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
+#if (MFX_VERSION < 1033)
     msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
+#endif
     msdk_printf(MSDK_STRING("   [-reset_start] - set start frame No. of Dynamic Resolution change, please indicate the new resolution with -dstw -dsth\n"));
     msdk_printf(MSDK_STRING("   [-reset_end]   - specifies the end of current Dynamic Resolution Change related options\n"));
     msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile (default is AVC high)\n"));
     msdk_printf(MSDK_STRING("   [-level decimal] - set AVC level (default is 41)\n"));
     msdk_printf(MSDK_STRING("   [-EncodedOrder] - use internal logic for reordering, reading from files (mvin, mbqp) will be in encoded order (default is display; ENCODE only)\n"));
+#if (MFX_VERSION < 1033)
     msdk_printf(MSDK_STRING("   [-DecodedOrder] - output in decoded order (useful to dump streamout data in DecodedOrder).\n"));
     msdk_printf(MSDK_STRING("                     WARNING: All FEI interface wrapper classes in sample_fei expect frames to come in DisplayOrder!\n"));
     msdk_printf(MSDK_STRING("                     (It means that FEI processing pipeline can't be constructed by sample if this option is ON)\n"));
+#endif
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mbsize] - with this options size control fields will be used from MB control structure (only ENC+PAK)\n"));
-    msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI. PREENC and ENC (ENCODE) expect different structures.\n"));
+    msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI. PREENC and ENCODE expect different structures.\n"));
     msdk_printf(MSDK_STRING("                  (by default ENCODE use display order input (unlike other interfaces), use EncodedOrder key to change input order)\n"));
     msdk_printf(MSDK_STRING("   [-repack_preenc_mv] - use this in pair with -mvin to import preenc MVout directly\n"));
     msdk_printf(MSDK_STRING("   [-mvout file] - use this to output MV predictors\n"));
@@ -95,6 +99,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-repackctrl file] - file to input max encoded frame size,number of pass and delta qp for each frame(ENCODE only)\n"));
 #if (MFX_VERSION >= 1025)
     msdk_printf(MSDK_STRING("   [-repackstat file] - file to output each frame's number of passes (ENCODE only)\n"));
+#if (MFX_VERSION < 1033)
     msdk_printf(MSDK_STRING("   [-mfe_frames MaxNumFrames] - set upper limit for number of frames to be used for submission\n"));
     msdk_printf(MSDK_STRING("   [-mfe_mode Mode] - set multi-frame operation mode\n"));
     msdk_printf(MSDK_STRING("   [-mfe_timeout timeout] - set timeout in microsecond\n"));
@@ -104,10 +109,13 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                          this version of sample supports only N:N mode\n"));
     msdk_printf(MSDK_STRING("                          with parfile mfe_* parameters enable multi frame encode operation for FEI ENCODE\n"));
 #endif
+#endif
     msdk_printf(MSDK_STRING("   [-weights file] - file to input weights for explicit weighted prediction (ENCODE only).\n"));
     msdk_printf(MSDK_STRING("   [-ImplicitWPB] - enable implicit weighted prediction B frames (ENCODE only).\n"));
+#if (MFX_VERSION < 1033)
     msdk_printf(MSDK_STRING("   [-streamout file] - dump decode streamout structures\n"));
     msdk_printf(MSDK_STRING("   [-recon file] - dump reconstructed surfaces to YUV file, it's for pipelines with PAK (PAK, ENC+PAK, PREENC+ENC+PAK)\n"));
+#endif
     msdk_printf(MSDK_STRING("   [-sys] - use system memory for surfaces (ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-8x8stat] - set 8x8 block for statistic report, default is 16x16 (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-search_window value] - specifies one of the predefined search path and window size. In range [1,8] (5 is default).\n"));
@@ -124,16 +132,16 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-inter_SAD] - specifies inter distortion adjustment. 0x00 - none, 0x02 - Haar transform (default)\n"));
     msdk_printf(MSDK_STRING("   [-adaptive_search] - enables adaptive search\n"));
     msdk_printf(MSDK_STRING("   [-forward_transform] - enables forward transform. Additional stat is calculated and reported, QP required (PREENC only)\n"));
-    msdk_printf(MSDK_STRING("   [-repartition_check] - enables additional sub pixel and bidirectional refinements (ENC, ENCODE)\n"));
-    msdk_printf(MSDK_STRING("   [-multi_pred_l0] - MVs from neighbor MBs will be used as predictors for L0 prediction list (ENC, ENCODE)\n"));
-    msdk_printf(MSDK_STRING("   [-multi_pred_l1] - MVs from neighbor MBs will be used as predictors for L1 prediction list (ENC, ENCODE)\n"));
-    msdk_printf(MSDK_STRING("   [-adjust_distortion] - if enabled adds a cost adjustment to distortion, default is RAW distortion (ENC, ENCODE)\n"));
-    msdk_printf(MSDK_STRING("   [-n_mvpredictors_P_l0 num] - number of MV predictors for l0 list of P frames, up to 4 is supported (default is 1) (ENC, ENCODE)\n"));
-    msdk_printf(MSDK_STRING("   [-n_mvpredictors_B_l0 num] - number of MV predictors for l0 list of B frames, up to 4 is supported (default is 1) (ENC, ENCODE)\n"));
-    msdk_printf(MSDK_STRING("   [-n_mvpredictors_l1 num] - number of MV predictors for l1 list, up to 4 is supported (default is 0) (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-repartition_check] - enables additional sub pixel and bidirectional refinements (ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-multi_pred_l0] - MVs from neighbor MBs will be used as predictors for L0 prediction list (ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-multi_pred_l1] - MVs from neighbor MBs will be used as predictors for L1 prediction list (ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-adjust_distortion] - if enabled adds a cost adjustment to distortion, default is RAW distortion (ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors_P_l0 num] - number of MV predictors for l0 list of P frames, up to 4 is supported (default is 1) (ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors_B_l0 num] - number of MV predictors for l0 list of B frames, up to 4 is supported (default is 1) (ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors_l1 num] - number of MV predictors for l1 list, up to 4 is supported (default is 0) (ENCODE)\n"));
     msdk_printf(MSDK_STRING("   [-preenc_mvpredictors_l0 bit] - enable/disable l0 predictor (default is to use if l0 reference exists) (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-preenc_mvpredictors_l1 bit] - enable/disable l1 predictor (default is to use if l1 reference exists) (PREENC only)\n"));
-    msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact (ENCODE)\n"));
     msdk_printf(MSDK_STRING("                                do not use it, unless it is necessary\n"));
     msdk_printf(MSDK_STRING("   [-dblk_idc value] - value of DisableDeblockingIdc (default is 0), in range [0,2]\n"));
     msdk_printf(MSDK_STRING("   [-dblk_alpha value] - value of SliceAlphaC0OffsetDiv2 (default is 0), in range [-6,6]\n"));
@@ -147,7 +155,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-perf] - switch on performance mode (disabled file operations, simplified predictors repacking)\n"));
     msdk_printf(MSDK_STRING("   [-rawref] - use raw frames for reference instead of reconstructed frames (ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-n_surf_input n] - specify number of surfaces that would be allocated for input frames\n"));
+#if (MFX_VERSION < 1033)
     msdk_printf(MSDK_STRING("   [-n_surf_recon n] - specify number of surfaces that would be allocated for reconstruct frames (ENC or/and PAK)\n"));
+#endif
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -228,6 +238,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         {
             pConfig->bENCPAK = true;
         }
+#if (MFX_VERSION < 1033)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
         {
             pConfig->bOnlyENC = true;
@@ -236,6 +247,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         {
             pConfig->bOnlyPAK = true;
         }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc")))
         {
             pConfig->bPREENC = true;
@@ -260,10 +272,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         {
             pConfig->EncodedOrder = true;
         }
+#if (MFX_VERSION < 1033)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-DecodedOrder")))
         {
             pConfig->DecodedOrder = true;
         }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvin")))
         {
             pConfig->mvinFile = strInput[i+1];
@@ -304,6 +318,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             pConfig->repackstatFile = strInput[i+1];
             i++;
         }
+#if (MFX_VERSION < 1033)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mfe_frames")))
         {
             pConfig->numMfeFrames = (int)msdk_strtol(strInput[i+1], &stopCharacter, 10);
@@ -319,6 +334,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             pConfig->mfeTimeout = (mfxU32)msdk_strtol(strInput[i+1], &stopCharacter, 10);
             i++;
         }
+#endif
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-weights")))
         {
@@ -338,6 +354,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             pConfig->mbctrinFile = strInput[i+1];
             i++;
         }
+#if (MFX_VERSION < 1033)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-streamout")))
         {
             pConfig->bDECODESTREAMOUT = true;
@@ -349,6 +366,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             pConfig->reconFile = strInput[i + 1];
             i++;
         }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
         {
             pConfig->ColorFormat = MFX_FOURCC_NV12;
@@ -692,11 +710,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             i++;
             pConfig->nInputSurf = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
+#if (MFX_VERSION < 1033)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_surf_recon")))
         {
             i++;
             pConfig->nReconSurf = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-w")))
         {
             i++;
