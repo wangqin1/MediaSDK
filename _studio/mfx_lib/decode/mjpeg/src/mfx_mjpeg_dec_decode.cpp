@@ -780,7 +780,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
     //gpu session priority 
     UMC::VideoDecoderParams* videoDecoderParams = &(decoder->umcVideoParams);
-    if (videoDecoderParams != nullptr)
+    if (videoDecoderParams != nullptr && videoDecoderParams->pVideoAccelerator != nullptr)
         videoDecoderParams->pVideoAccelerator->m_ContextPriority = m_core->GetSession()->m_priority;
 
     do

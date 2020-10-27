@@ -659,7 +659,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream* bs, mfxFrameSurface1*
 
     //gpu session priority
     UMC_MPEG2_DECODER::MPEG2DecoderParams* mpeg2DecoderParams = m_decoder->GetMpeg2DecoderParams();
-    if (mpeg2DecoderParams != nullptr)
+    if (mpeg2DecoderParams != nullptr && mpeg2DecoderParams->pVideoAccelerator != nullptr)
         mpeg2DecoderParams->pVideoAccelerator->m_ContextPriority = m_core->GetSession()->m_priority;
 
     // in case of EOS (flushing) decoder may return buffered surface
