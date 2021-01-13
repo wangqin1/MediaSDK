@@ -2666,7 +2666,6 @@ mfxStatus CEncodingPipeline::LoadFrameWithVACopy(mfxFrameSurface1* pSurf, mfxI32
 
     // load raw data from file to user buffer
     sts = m_FileReader.LoadNextFrame(pSurf);
-    MSDK_CHECK_STATUS(sts, "m_FileReader.LoadNextFrame failed");
 
     // copy raw data from uer buffer to video surface with vaCopy
     sts = drmdev->CopyVAFrame(pSurf, true, nVACopyMode);

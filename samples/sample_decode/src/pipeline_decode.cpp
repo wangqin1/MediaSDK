@@ -1555,7 +1555,7 @@ mfxStatus CDecodingPipeline::WriteFrameWithVACopy(mfxFrameSurface1* frame, mfxI3
 
     // write decoded frame data from user buffer to file
     sts = m_FileWriter.WriteNextFrame(frame);
-    MSDK_CHECK_STATUS(sts, "m_FileReader.LoadNextFrame failed");
+    MSDK_CHECK_STATUS(sts, "m_FileReader.WriteNextFrame failed");
 
     return sts;
 }
