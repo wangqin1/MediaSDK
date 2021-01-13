@@ -165,6 +165,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     pParams->bUseFullColorRange = false;
 #if defined(LIBVA_SUPPORT)
     pParams->libvaBackend = MFX_LIBVA_DRM;
+#endif
+#if defined(LIBVA_DRM_SUPPORT)
     pParams->nVACopy = -1; //default -1: vacopy disabled
 #endif
 
