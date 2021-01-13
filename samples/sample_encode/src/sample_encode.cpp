@@ -340,7 +340,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     pParams->MipiMode = NONE;
     pParams->v4l2Format = NO_FORMAT;
 #endif
-#ifdef LIBVA_SUPPORT
+#ifdef LIBVA_DRM_SUPPORT
     pParams->nVACopy = -1; //default -1: vacopy disabled
 #endif
 
