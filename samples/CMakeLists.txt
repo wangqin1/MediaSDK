@@ -18,12 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-FIND_PATH(MESA_HEADER GL/gl.h EGL/egl.h EGL/eglext.h gbm.h PATHS /usr/include /usr/local/include)
-
-if (NOT MESA_HEADER MATCHES NOTFOUND)
-    ADD_DEFINITIONS(-DUSE_OPENGL)
-endif()
-
+#ADD_DEFINITIONS(-DUSE_OPENGL)
 add_subdirectory(sample_common)
 add_subdirectory(sample_decode)
 add_subdirectory(sample_encode)
