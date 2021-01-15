@@ -270,6 +270,10 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     mfxU16 surfaces_num = request->NumFrameSuggested, numAllocated = 0, i = 0;
     bool bCreateSrfSucceeded = false;
 
+#if defined (USE_OPENGL)
+    mfxU16 va_use_opengl = request->use_opengl;
+#endif
+
     memset(response, 0, sizeof(mfxFrameAllocResponse));
 
     mfx_res = GetVAFourcc(fourcc, va_fourcc);
@@ -292,15 +296,28 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     {
         if( VA_FOURCC_P208 != va_fourcc )
         {
-            unsigned int format;
+            unsigned int format = 0;
             VASurfaceAttrib attrib[2];
             int attrCnt = 0;
 
             attrib[attrCnt].type          = VASurfaceAttribPixelFormat;
             attrib[attrCnt].flags         = VA_SURFACE_ATTRIB_SETTABLE;
             attrib[attrCnt].value.type    = VAGenericValueTypeInteger;
+
+#if defined(USE_OPENGL)            
+            if (va_use_opengl > 0)
+            {
+                attrib[attrCnt++].value.value.i = VA_FOURCC_ABGR;
+            }
+            else
+            {
+                attrib[attrCnt++].value.value.i = va_fourcc;
+                format = va_fourcc;
+            }
+#else
             attrib[attrCnt++].value.value.i = va_fourcc;
-            format               = va_fourcc;
+            format = va_fourcc;
+#endif
 
             if (fourcc == MFX_FOURCC_VP8_NV12)
             {
@@ -333,6 +350,11 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 format = VA_RT_FORMAT_RGBP;
             }
 
+#if defined (USE_OPENGL)
+            if (va_use_opengl > 0)
+                format = VA_RT_FORMAT_RGB32;
+#endif
+
             va_res = m_libva->vaCreateSurfaces(m_dpy,
                                     format,
                                     request->Info.Width, request->Info.Height,
@@ -342,6 +364,19 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
             mfx_res = va_to_mfx_status(va_res);
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
+
+#if defined (USE_OPENGL)
+            if (va_use_opengl > 0) // pass surface handle to request
+            {
+                uint32_t export_flags = VA_EXPORT_SURFACE_SEPARATE_LAYERS;
+                VADRMPRIMESurfaceDescriptor va_desc;
+                va_res = m_libva->vaExportSurfaceHandle(m_dpy, surfaces[0], 
+                                            VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
+                                            export_flags, &va_desc);
+                request->handle = va_desc.objects[0].fd;
+            }
+#endif
+
         }
         else
         {

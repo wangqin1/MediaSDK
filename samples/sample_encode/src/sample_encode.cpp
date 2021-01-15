@@ -221,6 +221,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("User module options: \n"));
     msdk_printf(MSDK_STRING("   [-angle 180] - enables 180 degrees picture rotation before encoding, CPU implementation by default. Rotation requires NV12 input. Options -tff|bff, -dstw, -dsth, -d3d are not effective together with this one, -nv12 is required.\n"));
     msdk_printf(MSDK_STRING("   [-opencl] - rotation implementation through OPENCL\n"));
+#if defined (USE_OPENGL)
+    msdk_printf(MSDK_STRING("   [-opengl] - render + encode pipeline\n"));
+#endif
     msdk_printf(MSDK_STRING("Example: %s h264|h265|mpeg2|mvc|jpeg -i InputYUVFile -o OutputEncodedFile -w width -h height -angle 180 -opencl \n"), strAppName);
 
     msdk_printf(MSDK_STRING("\n"));
@@ -303,6 +306,14 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
     {
         pParams->nRateControlMethod = MFX_RATECONTROL_VCM;
     }
+
+#if defined (USE_OPENGL)
+    else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-opengl")))
+    {
+        pParams->useOpenGL = true;
+    }
+#endif
+
     else
     {
         return MFX_ERR_NOT_FOUND;
@@ -1355,7 +1366,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #endif
 
     // check if all mandatory parameters were set
+#if defined (USE_OPENGL)
+    if (!pParams->InputFiles.size() && !pParams->isV4L2InputEnabled && !pParams->useOpenGL)
+#else
     if (!pParams->InputFiles.size() && !pParams->isV4L2InputEnabled)
+#endif
+
     {
         PrintHelp(strInput[0], MSDK_STRING("Source file name not found"));
         return MFX_ERR_UNSUPPORTED;
@@ -1635,7 +1651,7 @@ int main(int argc, char *argv[])
 #endif
 {
     sInputParams Params = {};   // input parameters from command line
-    std::unique_ptr<CEncodingPipeline>  pPipeline;
+    std::unique_ptr<CEncodingPipeline> pPipeline;
 
     mfxStatus sts = MFX_ERR_NONE; // return value check
 
@@ -1655,8 +1671,20 @@ int main(int argc, char *argv[])
         pPipeline->SetNumView(Params.numViews);
     }
 
+#if defined (USE_OPENGL)
+    if (Params.useOpenGL)
+        pPipeline->m_useOpenGL = true;
+    else
+        pPipeline->m_useOpenGL = false;
+#endif
+    
     sts = pPipeline->Init(&Params);
     MSDK_CHECK_STATUS(sts, "pPipeline->Init failed");
+
+#if defined (USE_OPENGL)
+    if (pPipeline->m_useOpenGL)
+        pPipeline->InitOpenGL(&Params);
+#endif
 
     pPipeline->PrintInfo();
 
@@ -1692,6 +1720,11 @@ int main(int argc, char *argv[])
     pPipeline->CaptureStopV4L2Pipeline();
 
     pPipeline->Close();
+
+#if defined (USE_OPENGL)
+    if (pPipeline->m_useOpenGL)
+        pPipeline->ReleaseOpenGL();
+#endif
 
     msdk_printf(MSDK_STRING("\nProcessing finished\n"));
 

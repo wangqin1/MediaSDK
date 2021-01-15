@@ -44,6 +44,19 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "preset_manager.h"
 
+#if defined(USE_OPENGL)
+#define GL_GLEXT_PROTOTYPES
+#define EGL_EGLEXT_PROTOTYPES
+#include <assert.h>
+#include <GL/gl.h>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <libdrm/drm.h>
+#include <libdrm/drm_fourcc.h>
+#include <fcntl.h>
+#include <gbm.h>
+#endif
+
 #if defined (ENABLE_V4L2_SUPPORT)
 #include "v4l2_util.h"
 #endif
@@ -170,6 +183,11 @@ struct sInputParams
     bool bSoftRobustFlag;
 
     bool QPFileMode;
+
+#if defined (USE_OPENGL)
+    bool useOpenGL;
+    mfxU16 handle;
+#endif
 
     mfxU32 nTimeout;
     mfxU16 nPerfOpt; // size of pre-load buffer which used for loop encode
@@ -321,6 +339,30 @@ public:
 
     virtual mfxStatus OpenRoundingOffsetFile(sInputParams *pInParams);
     mfxStatus InitEncFrameParams(sTask* pTask);
+
+#if defined (USE_OPENGL)
+    bool m_useOpenGL;
+    EGLDisplay egl_display;
+    EGLContext egl_context;
+    EGLSurface egl_surface;
+    GLuint framebuffer;
+    GLuint renderbuffer;
+    GLuint texture_load;
+    GLuint texture_render;
+    EGLImage image;
+    mfxU16 m_width;
+    mfxU16 m_height;
+    mfxU16 m_handle;
+    std::string m_device_path;
+    int m_fd;
+    struct gbm_device* m_gbm_device;
+    struct gbm_surface* m_gbm_surface;
+    int m_data[4];
+    void InitOpenGL(sInputParams* pParams);
+    void Initialize_EGL_gbm();
+    void RenderOpenGL();
+    void ReleaseOpenGL();
+#endif
 
 #if defined (ENABLE_V4L2_SUPPORT)
     v4l2Device v4l2Pipeline;

@@ -75,6 +75,110 @@ void UnlockPreEncAuxBuffer(PreEncAuxBuffer* pBuff)
     msdk_atomic_dec16(&pBuff->Locked);
 }
 
+#if defined (USE_OPENGL)
+void rotate_data(int data[4])
+{
+    int temp = data[0];
+    data[0] = data[2];
+    data[2] = data[3];
+    data[3] = data[1];
+    data[1] = temp;
+}
+
+void gl_setup_scene()
+{
+    // Shader source that draws a textures quad
+    const char* vertex_shader_source = "#version 330 core\n"
+                                       "layout (location = 0) in vec3 aPos;\n"
+                                       "layout (location = 1) in vec2 aTexCoords;\n"
+
+                                       "out vec2 TexCoords;\n"
+
+                                       "void main()\n"
+                                       "{\n"
+                                       "   TexCoords = aTexCoords;\n"
+                                       "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+                                       "}\0";
+    const char* fragment_shader_source = "#version 330 core\n"
+                                         "out vec4 FragColor;\n"
+
+                                         "in vec2 TexCoords;\n"
+
+                                         "uniform sampler2D Texture1;\n"
+
+                                         "void main()\n"
+                                         "{\n"
+                                         "   FragColor = texture(Texture1, TexCoords);\n"
+                                         "}\0";
+
+    // vertex shader
+    int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
+    glCompileShader(vertex_shader);
+    // fragment shader
+    int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
+    glCompileShader(fragment_shader);
+    // link shaders
+    int shader_program = glCreateProgram();
+    glAttachShader(shader_program, vertex_shader);
+    glAttachShader(shader_program, fragment_shader);
+    glLinkProgram(shader_program);
+    // delete shaders
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+
+    // quad
+    float vertices[] = {
+        0.5f, 0.5f, 0.0f, 1.0f, 1.0f,   // top right
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
+        -0.5f, 0.5f, 0.0f, 0.0f, 1.0f   // top left
+    };
+    unsigned int indices[] = {
+        0, 1, 3, // first Triangle
+        1, 2, 3  // second Triangle
+    };
+
+    unsigned int VBO, VAO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0);
+
+    // Prebind needed stuff for drawing
+    glUseProgram(shader_program);
+    glBindVertexArray(VAO);
+}
+
+void gl_draw_scene(GLuint texture)
+{
+    // clear
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // draw quad
+    // VAO and shader program are already bound from the call to gl_setup_scene
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+#endif
 
 CEncTaskPool::CEncTaskPool()
 {
@@ -94,7 +198,6 @@ sTask::sTask()
     : pAux(nullptr)
     , EncSyncP(0)
     , pWriter(NULL)
-
 {
 }
 
@@ -434,7 +537,6 @@ void CEncodingPipeline::DeallocateExtMVCBuffers()
         MSDK_SAFE_DELETE_ARRAY(mvcBuffer->ViewId);
         MSDK_SAFE_DELETE_ARRAY(mvcBuffer->OP);
     }
-
 }
 
 PreEncAuxBuffer*  CEncodingPipeline::GetFreePreEncAuxBuffer()
@@ -799,7 +901,14 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         MSDK_ZERO_MEMORY(m_mfxEncParams.mfx.reserved5);
     }
 
+#if defined (USE_OPENGL)
+    if (!m_useOpenGL)
+        m_mfxEncParams.AsyncDepth = pInParams->nAsyncDepth;
+    else
+        m_mfxEncParams.AsyncDepth = 1;
+#else
     m_mfxEncParams.AsyncDepth = pInParams->nAsyncDepth;
+#endif
 
     return MFX_ERR_NONE;
 }
@@ -1006,9 +1115,23 @@ mfxStatus CEncodingPipeline::AllocFrames()
         EncRequest.Type |= MFX_MEMTYPE_FROM_VPPOUT; // surfaces are shared between vpp output and encode input
     }
 
+#if defined (USE_OPENGL)
+    // set whether use opengl for request
+    if (m_useOpenGL)
+        EncRequest.use_opengl = 1;
+    else
+        EncRequest.use_opengl = 0;
+#endif
+    
     // alloc frames for encoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
     MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
+
+#if defined (USE_OPENGL)
+    // pass the handle of surface from request to pipeline
+    if (m_useOpenGL)
+        m_handle = EncRequest.handle;
+#endif
 
     // alloc frames for vpp if vpp is enabled
     if (m_pmfxVPP)
@@ -1622,6 +1745,10 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     m_MVCflags = pParams->MVC_flags;
 
+#if defined (USE_OPENGL)
+    m_useOpenGL = pParams->useOpenGL;
+#endif
+
     // FileReader can convert yv12->nv12 without vpp
     m_InputFourCC = (pParams->FileInputFourCC == MFX_FOURCC_I420) ? MFX_FOURCC_NV12 : pParams->FileInputFourCC;
 
@@ -1788,7 +1915,11 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     }
 
     // Preparing readers and writers
+#if defined (USE_OPENGL)
+    if (!isV4L2InputEnabled && !m_useOpenGL)
+#else
     if (!isV4L2InputEnabled)
+#endif
     {
         // prepare input file reader
         sts = m_FileReader.Init(pParams->InputFiles,
@@ -1877,6 +2008,175 @@ void CEncodingPipeline::InitV4L2Pipeline(sInputParams* /*pParams*/)
     }
 #endif
 }
+
+#if defined (USE_OPENGL)
+void CEncodingPipeline::Initialize_EGL_gbm()
+{
+    // set OpenGL rendering API
+    eglBindAPI(EGL_OPENGL_API);
+
+    // get device fd
+    if (!m_device_path.empty())
+        m_fd = open(m_device_path.c_str(), O_RDWR);
+    else
+        m_fd = open("/dev/dri/renderD128", O_RDWR);
+    
+    // create gbm device
+    m_gbm_device = gbm_create_device(m_fd);
+
+    // create gbm surface
+    m_gbm_surface = gbm_surface_create(m_gbm_device, m_width, m_height,
+                                       GBM_FORMAT_ARGB8888, GBM_BO_USE_RENDERING);
+
+    // get an EGL display with gbm
+    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+        (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+    egl_display = eglGetPlatformDisplayEXT(EGL_PLATFORM_GBM_MESA, m_gbm_device, NULL);
+
+    // initialize the EGL display connection
+    eglInitialize(egl_display, NULL, NULL);
+
+    // get the number of all EGL frame buffer configurations for a display
+    EGLint num_configs;
+    eglGetConfigs(egl_display, NULL, 0, &num_configs);
+
+    // attributes
+    EGLint egl_config_attribs[] = {
+        EGL_BUFFER_SIZE,        32,
+        EGL_DEPTH_SIZE,         EGL_DONT_CARE,
+        EGL_STENCIL_SIZE,       EGL_DONT_CARE,
+        EGL_RENDERABLE_TYPE,    EGL_OPENGL_ES2_BIT,
+        EGL_SURFACE_TYPE,       EGL_WINDOW_BIT,
+        EGL_NONE};
+    
+    // get a list of EGL frame buffer configurations that match specified attributes
+    EGLConfig* configs = (EGLConfig*)malloc(num_configs * sizeof(EGLConfig));
+    eglChooseConfig(egl_display, egl_config_attribs, configs, num_configs, &num_configs);
+    
+    // search all configurations
+    EGLConfig config_use = NULL;
+    for (int i = 0; i < num_configs; ++i)
+    {
+        EGLint gbm_format;
+        eglGetConfigAttrib(egl_display, configs[i], EGL_NATIVE_VISUAL_ID, &gbm_format);
+        if (gbm_format == GBM_FORMAT_ARGB8888) // match found
+        {
+            config_use = configs[i];
+            free(configs);
+            break;
+        }
+    }
+
+    // create an EGL rendering context
+    egl_context = eglCreateContext(egl_display, config_use, EGL_NO_CONTEXT, NULL);
+
+    // create an EGL window surface with gbm
+    PFNEGLCREATEPLATFORMWINDOWSURFACEEXTPROC eglCreatePlatformWindowSurfaceEXT =
+        (PFNEGLCREATEPLATFORMWINDOWSURFACEEXTPROC)eglGetProcAddress("eglCreatePlatformWindowSurfaceEXT");
+    egl_surface = eglCreatePlatformWindowSurfaceEXT(egl_display, config_use, m_gbm_surface, NULL);
+
+    // connect the context to the surface
+    eglMakeCurrent(egl_display, egl_surface, egl_surface, egl_context);
+}
+
+void CEncodingPipeline::InitOpenGL(sInputParams* pParams)
+{
+    m_width = pParams->nWidth;
+    m_height = pParams->nHeight;
+    m_device_path = pParams->strDevicePath;
+    // Initialize EGL
+    Initialize_EGL_gbm();
+
+    // Setup GL scene
+    gl_setup_scene();
+
+    // 2X2 texture
+    m_data[0] = 0x000000FF; // Red
+    m_data[1] = 0x0000FF00; // Green
+    m_data[2] = 0X00FF0000; // Blue
+    m_data[3] = 0x00FFFFFF; // White
+
+    // Create texture_load
+    glGenTextures(1, &texture_load);
+    glBindTexture(GL_TEXTURE_2D, texture_load);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    // Set the attribute for EGLImage
+    EGLAttrib const attribute[] = {
+        EGL_WIDTH, m_width,
+        EGL_HEIGHT, m_height,
+        EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ABGR8888,
+        EGL_DMA_BUF_PLANE0_FD_EXT, m_handle,
+        EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+        EGL_DMA_BUF_PLANE0_PITCH_EXT, m_width * 4,
+        EGL_NONE};
+
+    // Create EGLImage from VA handle
+    image = eglCreateImage(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attribute);
+
+    // Create texture_render and bind it to the framebuffer
+    glGenTextures(1, &texture_render);
+    glBindTexture(GL_TEXTURE_2D, texture_render);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES = 
+        (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+    glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, image);
+
+    // Create renderbuffer
+    glGenRenderbuffers(1, &renderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, m_width, m_height);
+
+    // Create framebuffer
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    // Attach texture and renderbuffer
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_render, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer);
+
+    // Check framebuffer
+    assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+
+    // Swap happens as soon as the render is complete
+    eglSwapInterval(egl_display, 0);
+    
+    // Set viewport
+    glViewport(0, 0, m_width, m_height);
+}
+
+void CEncodingPipeline::RenderOpenGL()
+{
+    // load the texture
+    glBindTexture(GL_TEXTURE_2D, texture_load);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+
+    // Render
+    gl_draw_scene(texture_load);
+    eglSwapBuffers(egl_display, egl_surface);
+
+    // Rotate the texture
+    rotate_data(m_data);
+}
+
+void CEncodingPipeline::ReleaseOpenGL()
+{
+    glDeleteTextures(1, &texture_load);
+    glDeleteTextures(1, &texture_render);
+    glDeleteRenderbuffers(1, &renderbuffer);
+    glDeleteFramebuffers(1, &framebuffer);
+    eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroyImage(egl_display, image);
+    eglDestroyContext(egl_display, egl_context);
+    eglDestroySurface(egl_display, egl_surface);
+    eglTerminate(egl_display);
+    gbm_device_destroy(m_gbm_device);
+    gbm_surface_destroy(m_gbm_surface);
+    close(m_fd);
+}
+#endif
 
 mfxStatus CEncodingPipeline::CaptureStartV4L2Pipeline()
 {
@@ -2027,8 +2327,18 @@ mfxStatus CEncodingPipeline::FillBuffers()
             {
                 sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, surface->Data.MemId, &surface->Data);
                 MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
+
+#if not defined (USE_OPENGL)
                 sts = m_FileReader.LoadNextFrame(surface);
                 MSDK_CHECK_STATUS(sts, "m_FileReader.LoadNextFrame failed");
+#else
+                if (!m_useOpenGL)
+                {
+                    sts = m_FileReader.LoadNextFrame(surface);
+                    MSDK_CHECK_STATUS(sts, "m_FileReader.LoadNextFrame failed");
+                }
+#endif
+
                 sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, surface->Data.MemId, &surface->Data);
                 MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Unlock failed");
             }
@@ -2380,7 +2690,7 @@ mfxStatus CEncodingPipeline::Run()
         // get a pointer to a free task (bit stream and sync point for encoder)
         sts = GetFreeTask(&pCurrentTask);
         MSDK_BREAK_ON_ERROR(sts);
-
+ 
         // find free surface for encoder input
         if (m_nPerfOpt && !m_pmfxVPP)
         {
@@ -2424,7 +2734,16 @@ mfxStatus CEncodingPipeline::Run()
                 vppSurface.pSurface->Info.FrameId.ViewId = currViewNum;
 
                 m_statFile.StartTimeMeasurement();
+
+#if not defined (USE_OPENGL)
                 sts = LoadNextFrame(vppSurface.pSurface);
+#else
+                if (!m_useOpenGL)
+                    sts = LoadNextFrame(vppSurface.pSurface);
+                else
+                    RenderOpenGL();
+#endif
+
                 m_statFile.StopTimeMeasurement();
 
                 if ( (MFX_ERR_MORE_DATA == sts) && !m_bTimeOutExceed)
@@ -2639,6 +2958,7 @@ mfxStatus CEncodingPipeline::Run()
     // report any errors that occurred in asynchronous part
     MSDK_CHECK_STATUS(sts, "m_TaskPool.SynchronizeFirstTask failed");
     m_statOverall.StopTimeMeasurement();
+
     return sts;
 }
 
@@ -2720,8 +3040,13 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
                     sts = m_FileReader.SkipNframesFromBeginning(w, h, vid, m_QPFileReader.GetCurrentDisplayOrder());
                     MSDK_CHECK_STATUS(sts, "m_FileReader.SkipNframesFromBeginning failed");
                 }
-
+            
+#if not defined (USE_OPENGL)
                 sts = m_FileReader.LoadNextFrame(pSurf);
+#else
+                if (!m_useOpenGL)
+                    sts = m_FileReader.LoadNextFrame(pSurf);
+#endif
 
                 sts1 = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
                 MSDK_CHECK_STATUS(sts1, "m_pMFXAllocator->Unlock failed");
@@ -2769,7 +3094,16 @@ void CEncodingPipeline::LoadNextControl(mfxEncodeCtrl*& pCtrl, mfxU32 encSurfIdx
 void CEncodingPipeline::PrintInfo()
 {
     msdk_printf(MSDK_STRING("Encoding Sample Version %s\n"), GetMSDKSampleVersion().c_str());
+
+#if defined (USE_OPENGL)
+    if (!m_useOpenGL)
+        msdk_printf(MSDK_STRING("\nInput file format\t%s\n"), ColorFormatToStr(m_FileReader.m_ColorFormat));
+    else
+        msdk_printf(MSDK_STRING("\nInput file format\tOpenGL\n"));
+#else
     msdk_printf(MSDK_STRING("\nInput file format\t%s\n"), ColorFormatToStr(m_FileReader.m_ColorFormat));
+#endif
+
     msdk_printf(MSDK_STRING("Output video\t\t%s\n"), CodecIdToStr(m_mfxEncParams.mfx.CodecId).c_str());
 
     mfxFrameInfo SrcPicInfo = m_mfxVppParams.vpp.In;

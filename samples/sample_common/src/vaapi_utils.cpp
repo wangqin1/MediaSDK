@@ -99,6 +99,7 @@ VA_Proxy::VA_Proxy()
     , SIMPLE_LOADER_FUNCTION(vaDestroyConfig)
     , SIMPLE_LOADER_FUNCTION(vaDestroyContext)
     , SIMPLE_LOADER_FUNCTION(vaCopy)
+    , SIMPLE_LOADER_FUNCTION(vaExportSurfaceHandle)
 {
 }
 

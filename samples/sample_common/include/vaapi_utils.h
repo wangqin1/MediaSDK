@@ -118,6 +118,11 @@ namespace MfxLoader
                                          VACopyObject * dst,
                                          VACopyObject * src,
                                          VACopyOption option);
+        typedef VAStatus (*vaExportSurfaceHandle_type) (VADisplay dpy,
+                                                        VASurfaceID surface_id,
+                                                        uint32_t mem_type,
+                                                        uint32_t flags, 
+                                                        void *descriptor);
 
         VA_Proxy();
         ~VA_Proxy();
@@ -143,7 +148,8 @@ namespace MfxLoader
         const vaCreateContext_type          vaCreateContext;
         const vaDestroyConfig_type          vaDestroyConfig;
         const vaDestroyContext_type         vaDestroyContext;
-        const vaCopy_type					vaCopy;
+        const vaCopy_type                   vaCopy;
+        const vaExportSurfaceHandle_type    vaExportSurfaceHandle;
     };
 #endif
 
