@@ -2320,7 +2320,6 @@ mfxStatus CEncodingPipeline::FillBuffers()
             if (m_nVACopy != -1) // vacopy mode
             {
                 sts = LoadFrameWithVACopy(surface, m_nVACopy);
-                MSDK_CHECK_STATUS(sts, "LoadFrameWithVACopy failed");
             }
             else
 #endif
@@ -2966,14 +2965,16 @@ mfxStatus CEncodingPipeline::Run()
 mfxStatus CEncodingPipeline::LoadFrameWithVACopy(mfxFrameSurface1* pSurf, mfxI32 nVACopyMode)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    mfxStatus sts1 = MFX_ERR_NONE;
+
     CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(m_hwdev);
 
     MSDK_CHECK_POINTER(pSurf, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_POINTER(m_hwdev, MFX_ERR_NOT_INITIALIZED);
 
     // setup system surface for gpu copy
-    sts = drmdev->SetupUserSurface(pSurf);
-    MSDK_CHECK_STATUS(sts, "m_hwdev->SetupUserSurface failed");
+    sts1 = drmdev->SetupUserSurface(pSurf);
+    MSDK_CHECK_STATUS(sts1, "m_hwdev->SetupUserSurface failed");
 
     if (m_bQPFileMode)
     {
@@ -2988,8 +2989,8 @@ mfxStatus CEncodingPipeline::LoadFrameWithVACopy(mfxFrameSurface1* pSurf, mfxI32
     sts = m_FileReader.LoadNextFrame(pSurf);
 
     // copy raw data from uer buffer to video surface with vaCopy
-    sts = drmdev->CopyVAFrame(pSurf, true, nVACopyMode);
-    MSDK_CHECK_STATUS(sts, "m_hwdev->CopyFrame failed");
+    sts1 = drmdev->CopyVAFrame(pSurf, true, nVACopyMode);
+    MSDK_CHECK_STATUS(sts1, "m_hwdev->CopyFrame failed");
 
     return sts;
 }
@@ -3024,7 +3025,6 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
             if (m_nVACopy != -1) //vacopy mode
             {
                 sts = LoadFrameWithVACopy(pSurf, m_nVACopy);
-                MSDK_CHECK_STATUS(sts, "LoadFrameWithVACopy failed");
             }
             else
 #endif
