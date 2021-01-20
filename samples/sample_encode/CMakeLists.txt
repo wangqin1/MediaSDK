@@ -8,7 +8,9 @@ list( APPEND LIBS_VARIANT sample_common )
 
 set(DEPENDENCIES libmfx dl pthread)
 
-#link_libraries(EGL GL gbm)
+if( DEFINED OPENGL_FOUND )
+    link_libraries( EGL GL gbm )
+endif()
 
 make_executable( shortname universal )
 

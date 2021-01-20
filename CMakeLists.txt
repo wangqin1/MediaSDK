@@ -55,6 +55,8 @@ endif()
 
 option( ENABLE_OPENCL "Build targets dependent on OpenCL?" ON )
 
+option( ENABLE_OPENGL "Build targets dependent on OpenGL?" OFF )
+
 # -DENABLE_ALL will enable all the dependencies and features unless user did not
 # explicitly switched some of them OFF, i.e. configuring in the following way
 # is possible:
@@ -94,6 +96,7 @@ option(BUILD_TESTS "Build tests?" "${BUILD_ALL}")
 option(USE_SYSTEM_GTEST "Use system installed gtest?" OFF)
 
 include( ${BUILDER_ROOT}/FindOpenCL.cmake )
+include( ${BUILDER_ROOT}/FindOpenGL.cmake )
 include( ${BUILDER_ROOT}/FindFunctions.cmake )
 include( ${BUILDER_ROOT}/FindMFX.cmake )
 include( ${BUILDER_ROOT}/FindGlobals.cmake )
@@ -201,6 +204,7 @@ message("  CMAKE_INSTALL_FULL_LIBDIR               : ${CMAKE_INSTALL_FULL_LIBDIR
 message("  CMAKE_INSTALL_FULL_DATADIR              : ${CMAKE_INSTALL_FULL_DATADIR}")
 message("Enable:")
 message("  ENABLE_OPENCL                           : ${ENABLE_OPENCL}")
+message("  ENABLE_OPENGL                           : ${ENABLE_OPENGL}")
 if( CMAKE_SYSTEM_NAME MATCHES Linux )
   message("  ENABLE_X11                              : ${ENABLE_X11}")
   message("  ENABLE_X11_DRI3                         : ${ENABLE_X11_DRI3}")
