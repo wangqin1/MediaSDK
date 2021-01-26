@@ -905,7 +905,10 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     if (!m_useOpenGL)
         m_mfxEncParams.AsyncDepth = pInParams->nAsyncDepth;
     else
+    {
         m_mfxEncParams.AsyncDepth = 1;
+        m_mfxEncParams.mfx.GopRefDist = 1;
+    }
 #else
     m_mfxEncParams.AsyncDepth = pInParams->nAsyncDepth;
 #endif
@@ -1116,9 +1119,14 @@ mfxStatus CEncodingPipeline::AllocFrames()
     }
 
 #if defined (USE_OPENGL)
-    // set whether use opengl for request
+    // pass opengl configurations to request for creating VAsurface
     if (m_useOpenGL)
+    {
         EncRequest.use_opengl = 1;
+        EncRequest.prime_fd = m_prime_fd;
+        EncRequest.stride = m_stride;
+        EncRequest.offset = m_offset;
+    }
     else
         EncRequest.use_opengl = 0;
 #endif
@@ -1126,12 +1134,6 @@ mfxStatus CEncodingPipeline::AllocFrames()
     // alloc frames for encoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
     MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
-
-#if defined (USE_OPENGL)
-    // pass the handle of surface from request to pipeline
-    if (m_useOpenGL)
-        m_handle = EncRequest.handle;
-#endif
 
     // alloc frames for vpp if vpp is enabled
     if (m_pmfxVPP)
@@ -2102,27 +2104,11 @@ void CEncodingPipeline::InitOpenGL(sInputParams* pParams)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
-    // Set the attribute for EGLImage
-    EGLAttrib const attribute[] = {
-        EGL_WIDTH, m_width,
-        EGL_HEIGHT, m_height,
-        EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_ABGR8888,
-        EGL_DMA_BUF_PLANE0_FD_EXT, m_handle,
-        EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-        EGL_DMA_BUF_PLANE0_PITCH_EXT, m_width * 4,
-        EGL_NONE};
 
-    // Create EGLImage from VA handle
-    image = eglCreateImage(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attribute);
-
-    // Create texture_render and bind it to the framebuffer
+    // Create texture_render
     glGenTextures(1, &texture_render);
     glBindTexture(GL_TEXTURE_2D, texture_render);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES = 
-        (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
-    glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, image);
 
     // Create renderbuffer
     glGenRenderbuffers(1, &renderbuffer);
@@ -2133,7 +2119,7 @@ void CEncodingPipeline::InitOpenGL(sInputParams* pParams)
     glGenFramebuffers(1, &framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-    // Attach texture and renderbuffer
+    // Attach texture_render and renderbuffer to framebuffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_render, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer);
 
@@ -2145,6 +2131,18 @@ void CEncodingPipeline::InitOpenGL(sInputParams* pParams)
     
     // Set viewport
     glViewport(0, 0, m_width, m_height);
+
+    // Create a image based on texture_render
+    image = eglCreateImage(egl_display, egl_context, EGL_GL_TEXTURE_2D, (EGLClientBuffer)(uint64_t)texture_render, NULL);
+    
+    // Export prime_fd of the image
+    PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC eglExportDMABUFImageQueryMESA =
+        (PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC)eglGetProcAddress("eglExportDMABUFImageQueryMESA");
+    EGLBoolean queried = eglExportDMABUFImageQueryMESA(egl_display, image, NULL, NULL, NULL);
+
+    PFNEGLEXPORTDMABUFIMAGEMESAPROC eglExportDMABUFImageMESA =
+        (PFNEGLEXPORTDMABUFIMAGEMESAPROC)eglGetProcAddress("eglExportDMABUFImageMESA");
+    EGLBoolean exported = eglExportDMABUFImageMESA(egl_display, image, &m_prime_fd, &m_stride, &m_offset);
 }
 
 void CEncodingPipeline::RenderOpenGL()

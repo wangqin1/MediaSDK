@@ -1143,9 +1143,11 @@ typedef struct {
         mfxU32  AllocId;
         mfxU32  reserved[1];
     };
-    mfxU16  handle;
     mfxU16  use_opengl;
-    mfxU32  reserved3[2];
+    mfxU16  prime_fd;
+    mfxU16  stride;
+    mfxU16  offset;
+    mfxU32  reserved3[1];
     mfxFrameInfo    Info;
     mfxU16  Type;   /* decoder or processor render targets */
     mfxU16  NumFrameMin;
