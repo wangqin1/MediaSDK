@@ -53,7 +53,7 @@ else()
   set( MFX_HOME $ENV{MFX_HOME} )
 endif()
 
-option( ENABLE_OPENCL "Build targets dependent on OpenCL?" OFF )
+option( ENABLE_OPENCL "Build targets dependent on OpenCL?" ON )
 
 option( ENABLE_OPENGL "Build targets dependent on OpenGL?" OFF )
 
