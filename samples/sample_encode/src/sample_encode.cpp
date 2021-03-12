@@ -1681,12 +1681,16 @@ int main(int argc, char *argv[])
     if (Params.useOpenGL)
     {
         pPipeline->m_useOpenGL = true;
+        pPipeline->m_metadata.use_opengl = true;
         pPipeline->InitOpenGL(&Params);
     }
     else
+    {
         pPipeline->m_useOpenGL = false;
+        pPipeline->m_metadata.use_opengl = false;
+    }
 #endif
-    
+
     sts = pPipeline->Init(&Params);
     MSDK_CHECK_STATUS(sts, "pPipeline->Init failed");
 

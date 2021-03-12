@@ -271,9 +271,8 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     bool bCreateSrfSucceeded = false;
 
 #if defined (USE_OPENGL)
-    mfxU16 va_use_opengl = request->use_opengl;
-    int prime_fd = request->prime_fd;
-    VASurfaceAttribExternalBuffers extsrf;
+    bool va_use_opengl = request->metadata->use_opengl;
+    VADRMPRIMESurfaceDescriptor extsrf;
     memset(&extsrf, 0, sizeof(extsrf));
 #endif
 
@@ -304,22 +303,25 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             int attrCnt = 0;
 
 #if defined (USE_OPENGL)
-            if (va_use_opengl > 0)
+            if (va_use_opengl == true)
             {
-                extsrf.pixel_format = VA_FOURCC_ABGR;
+                extsrf.fourcc = VA_FOURCC_RGBA;
                 extsrf.width = request->Info.Width;
                 extsrf.height = request->Info.Height;
-                extsrf.data_size = request->Info.Width * request->Info.Height * 4;
-                extsrf.num_buffers = 1;
-                extsrf.num_planes = 1;
-                extsrf.buffers = (long unsigned int*)&prime_fd;
-                extsrf.pitches[0] = request->stride;
-                extsrf.offsets[0] = request->offset;
+                extsrf.num_objects = 1;
+                extsrf.objects[0].fd = request->metadata->prime_fd;
+                extsrf.objects[0].size = request->Info.Width * request->Info.Height * 4;
+                extsrf.objects[0].drm_format_modifier = request->metadata->modifier;
+                extsrf.num_layers = 1;
+                extsrf.layers[0].drm_format = request->metadata->fourcc;
+                extsrf.layers[0].num_planes = request->metadata->num_plane;
+                extsrf.layers[0].pitch[0] = request->metadata->stride;
+                extsrf.layers[0].offset[0] = request->metadata->offset;
 
                 attrib[attrCnt].type            = VASurfaceAttribMemoryType;
                 attrib[attrCnt].flags           = VA_SURFACE_ATTRIB_SETTABLE;
                 attrib[attrCnt].value.type      = VAGenericValueTypeInteger;
-                attrib[attrCnt++].value.value.i = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME;
+                attrib[attrCnt++].value.value.i = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2;
 
                 attrib[attrCnt].type            = VASurfaceAttribExternalBufferDescriptor;
                 attrib[attrCnt].flags           = VA_SURFACE_ATTRIB_SETTABLE;

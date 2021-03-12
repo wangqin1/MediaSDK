@@ -1120,17 +1120,9 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
 #if defined (USE_OPENGL)
     // pass opengl configurations to request for creating VAsurface
-    if (m_useOpenGL)
-    {
-        EncRequest.use_opengl = 1;
-        EncRequest.prime_fd = m_prime_fd;
-        EncRequest.stride = m_stride;
-        EncRequest.offset = m_offset;
-    }
-    else
-        EncRequest.use_opengl = 0;
+    EncRequest.metadata = &m_metadata;
 #endif
-    
+
     // alloc frames for encoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
     MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
@@ -1452,6 +1444,10 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_EncResponse);
     MSDK_ZERO_MEMORY(m_VppResponse);
     MSDK_ZERO_MEMORY(m_PreEncResponse);
+
+#if defined (USE_OPENGL)
+    MSDK_ZERO_MEMORY(m_metadata);
+#endif
 
     isV4L2InputEnabled = false;
 
@@ -1932,7 +1928,6 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     sts = InitFileWriters(pParams);
     MSDK_CHECK_STATUS(sts, "InitFileWriters failed");
 
-
     // set memory type
     m_memType = pParams->memType;
     m_nPerfOpt = pParams->nPerfOpt;
@@ -2086,6 +2081,7 @@ void CEncodingPipeline::InitOpenGL(sInputParams* pParams)
     m_width = pParams->nWidth;
     m_height = pParams->nHeight;
     m_device_path = pParams->strDevicePath;
+
     // Initialize EGL
     Initialize_EGL_gbm();
 
@@ -2138,16 +2134,16 @@ void CEncodingPipeline::InitOpenGL(sInputParams* pParams)
     // Export prime_fd of the image
     PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC eglExportDMABUFImageQueryMESA =
         (PFNEGLEXPORTDMABUFIMAGEQUERYMESAPROC)eglGetProcAddress("eglExportDMABUFImageQueryMESA");
-    EGLBoolean queried = eglExportDMABUFImageQueryMESA(egl_display, image, NULL, NULL, NULL);
+    EGLBoolean queried = eglExportDMABUFImageQueryMESA(egl_display, image, &m_metadata.fourcc, &m_metadata.num_plane, &m_metadata.modifier);
 
     PFNEGLEXPORTDMABUFIMAGEMESAPROC eglExportDMABUFImageMESA =
         (PFNEGLEXPORTDMABUFIMAGEMESAPROC)eglGetProcAddress("eglExportDMABUFImageMESA");
-    EGLBoolean exported = eglExportDMABUFImageMESA(egl_display, image, &m_prime_fd, &m_stride, &m_offset);
+    EGLBoolean exported = eglExportDMABUFImageMESA(egl_display, image, &m_metadata.prime_fd, &m_metadata.stride, &m_metadata.offset);
 }
 
 void CEncodingPipeline::RenderOpenGL()
 {
-    // load the texture
+    // Load the texture
     glBindTexture(GL_TEXTURE_2D, texture_load);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
 
@@ -2325,16 +2321,8 @@ mfxStatus CEncodingPipeline::FillBuffers()
                 sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, surface->Data.MemId, &surface->Data);
                 MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
 
-#if not defined (USE_OPENGL)
                 sts = m_FileReader.LoadNextFrame(surface);
                 MSDK_CHECK_STATUS(sts, "m_FileReader.LoadNextFrame failed");
-#else
-                if (!m_useOpenGL)
-                {
-                    sts = m_FileReader.LoadNextFrame(surface);
-                    MSDK_CHECK_STATUS(sts, "m_FileReader.LoadNextFrame failed");
-                }
-#endif
 
                 sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, surface->Data.MemId, &surface->Data);
                 MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Unlock failed");
@@ -3038,13 +3026,8 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
                     sts = m_FileReader.SkipNframesFromBeginning(w, h, vid, m_QPFileReader.GetCurrentDisplayOrder());
                     MSDK_CHECK_STATUS(sts, "m_FileReader.SkipNframesFromBeginning failed");
                 }
-            
-#if not defined (USE_OPENGL)
+
                 sts = m_FileReader.LoadNextFrame(pSurf);
-#else
-                if (!m_useOpenGL)
-                    sts = m_FileReader.LoadNextFrame(pSurf);
-#endif
 
                 sts1 = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
                 MSDK_CHECK_STATUS(sts1, "m_pMFXAllocator->Unlock failed");

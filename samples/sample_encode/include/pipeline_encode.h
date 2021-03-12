@@ -352,9 +352,7 @@ public:
     GLuint texture_render;
     mfxU16 m_width;
     mfxU16 m_height;
-    int m_prime_fd;
-    int m_stride;
-    int m_offset;
+    ExternelTextureMetadata m_metadata;
     int m_fd;
     int m_data[4];
     std::string m_device_path;
