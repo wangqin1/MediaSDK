@@ -1137,31 +1137,16 @@ enum {
 #endif
 };
 
-#if defined (USE_OPENGL)
-struct ExternelTextureMetadata {
-    bool use_opengl;
-    int fourcc;
-    int num_plane;
-    long unsigned int modifier;
-    int prime_fd;
-    int stride;
-    int offset;
-};
-#endif
-
 MFX_PACK_BEGIN_USUAL_STRUCT()
 typedef struct {
     union {
         mfxU32  AllocId;
         mfxU32  reserved[1];
     };
-#if defined (USE_OPENGL)
-    ExternelTextureMetadata*  metadata;
-    mfxU32  reserved3[1];
-#else
-    mfxU32  reserved3[3];
-#endif
-    mfxFrameInfo  Info;
+    mfxU16  handle;
+    mfxU16  use_opengl;
+    mfxU32  reserved3[2];
+    mfxFrameInfo    Info;
     mfxU16  Type;   /* decoder or processor render targets */
     mfxU16  NumFrameMin;
     mfxU16  NumFrameSuggested;
