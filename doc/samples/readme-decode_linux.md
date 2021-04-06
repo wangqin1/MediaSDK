@@ -56,10 +56,12 @@ The following command-line switches are optional:
    |[-p plugin] | decoder plugin. Supported values: hevcd_sw, hevcd_hw, vp8d_hw, vp9d_hw, camera_hw, capture_hw|
   | [-path path]| path to plugin (valid only in pair with -p option) (optional for Media SDK in-box plugins, required for user-decoder ones)|
  |  [-f]| rendering framerate|
+  | [-fps]| limits overall fps of pipeline|
   | [-w]| output width|
   | [-h]| output height|
-   |[-di bob/adi] | enable deinterlacing BOB/ADI|
- |  [-d]| enable decode error report|
+  | [-di bob/adi] | enable deinterlacing BOB/ADI|
+  | [-scaling_mode]| specify scaling mode (lowpower/quality) for VPP|
+  | [-d] | enable decode error report|
    |[-jpeg_rgb] |RGB Chroma Type|
    |[-device /path/to/device]| set graphics device for processing. For example: `-device /dev/dri/renderD128`. If not specified, defaults to the first Intel device found on the system. |
 |Output format parameters:||

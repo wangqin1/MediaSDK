@@ -3174,6 +3174,13 @@ mfxStatus CTranscodingPipeline::InitVppMfxParams(sInputParams *pInParams)
         outSignalInfo->VideoFullRange		  = 0; // Limited range NV12
         outSignalInfo->ColourPrimaries		  = 1; // BT.709
     }
+
+    if (pInParams->ScalingMode)
+    {
+        auto par = m_mfxVppParams.AddExtBuffer<mfxExtVPPScaling>();
+        par->ScalingMode = pInParams->ScalingMode;
+    }
+
     if (enhFilterCount)
     {
         auto doUse = m_mfxVppParams.AddExtBuffer<mfxExtVPPDoUse>();

@@ -573,6 +573,12 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         if (m_diMode)
             m_mfxVppVideoParams.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
+        if (pParams->ScalingMode)
+        {
+            auto par = m_mfxVppVideoParams.AddExtBuffer<mfxExtVPPScaling>();
+            par->ScalingMode = pParams->ScalingMode;
+        }
+
         sts = m_pmfxVPP->Init(&m_mfxVppVideoParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts)
         {
@@ -1169,7 +1175,6 @@ mfxStatus CDecodingPipeline::AllocFrames()
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         MSDK_CHECK_STATUS(sts, "m_pmfxDEC->QueryIOSurf failed");
 
-
         sts = InitVppParams();
         MSDK_CHECK_STATUS(sts, "InitVppParams failed");
 
@@ -1524,6 +1529,15 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
 
     if(m_pmfxVPP)
     {
+        if (m_diMode)
+            m_mfxVppVideoParams.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+        if (pParams->ScalingMode)
+        {
+            auto par = m_mfxVppVideoParams.AddExtBuffer<mfxExtVPPScaling>();
+            par->ScalingMode = pParams->ScalingMode;
+        }
+
         sts = m_pmfxVPP->Init(&m_mfxVppVideoParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts)
         {
