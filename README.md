@@ -10,7 +10,7 @@ Media SDK is a part of Intel software stack for graphics:
   * Visit [documentation](https://dgpu-docs.intel.com) for instructions on installing, deploying, and updating Intel software to enable general purpose GPU (GPGPU) capabilities for Linux&ast;-based operating system distributions.
 
 # Dependencies
-Intel Media SDK depends on [LibVA](https://github.com/01org/libva/).
+Intel Media SDK depends on [LibVA](https://github.com/VCDP/libva).
 This version of Intel Media SDK is compatible with the open source [Intel Media Driver for VAAPI](https://github.com/intel/media-driver).
 
 # FAQ
@@ -78,7 +78,7 @@ Use Media SDK via popular frameworks:
 * [GStreamer](https://gstreamer.freedesktop.org/) via plugins set included
   into [gst-plugins-bad](https://gitlab.freedesktop.org/gstreamer/gst-plugins-bad)
 
-Learn best practises and borrow fragments for final solutions:
+Learn best practices and borrow fragments for final solutions:
 * https://github.com/intel/media-delivery
   * This collection of samples demonstrates best practices to achieve optimal video quality and
     performance on Intel GPUs for content delivery networks. Check out the demo, recommended command
@@ -99,12 +99,12 @@ Use Media SDK via other Intel products:
 * Windows (not all features are supported in Windows build - see Known Limitations for details)
 
 **Software:**
-* [LibVA](https://github.com/intel/libva)
+* [LibVA](https://github.com/VCDP/libva)
 * VAAPI backend driver:
-  * [Intel Media Driver for VAAPI](https://github.com/intel/media-driver)
-* Some features require CM Runtime library (part of [Intel Media Driver for VAAPI](https://github.com/intel/media-driver) package)
+  * [Intel Media Driver for VAAPI](https://github.com/VCDP/media-driver)
+* Some features require CM Runtime library (part of [Intel Media Driver for VAAPI](https://github.com/VCDP/media-driver) package)
 
-**Hardware:** Intel platforms supported by the [Intel Media Driver for VAAPI](https://github.com/intel/media-driver)
+**Hardware:** Intel platforms supported by the [Intel Media Driver for VAAPI](https://github.com/VCDP/media-driver)
 
 Media SDK test and sample applications may require additional software packages (for example, X Server, Wayland, LibDRM, etc.) to be functional.
 
@@ -118,17 +118,34 @@ Requires Microsoft Visual Studio 2017 for building.
 
 Get sources with the following Git* command (pay attention that to get full Media SDK sources bundle it is required to have Git* with [LFS](https://git-lfs.github.com/) support):
 ```sh
-git clone https://github.com/Intel-Media-SDK/MediaSDK msdk
+git clone https://github.com/VCDP/MediaSDK.git msdk
 cd msdk
 ```
 
-To configure and build Media SDK install cmake version 3.6 or later and run the following commands:
+Then check out intel-media-sg1 branch or release/sg1/pv* tag.
+
+Note: For CentOS, the default gcc/g++ version may be lower than required for MediaSDK build. Please upgrade to devtoolset-7 as following:
+
+```sh
+sudo yum install centos-release-scl
+sudo yum install devtoolset-7
+```
+
+Then run below command to switch to devtoolset-7 environment to make MediaSDK source code:
+
+```sh
+scl enable devtoolset-7 bash
+```
+
+To configure and build Media SDK, install cmake version 3.6 or later and run the following commands:
+
 ```sh
 mkdir build && cd build
 cmake ..
 make
 make install
 ```
+
 Media SDK depends on a number of packages which are identified and checked for the proper version during configuration stage. Please, make sure to install these packages to satisfy Media SDK requirements. After successful configuration 'make' will build Media SDK binaries and samples. The following cmake configuration options can be used to customize the build:
 
 | Option | Values | Description |
