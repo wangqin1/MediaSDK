@@ -122,7 +122,7 @@ git clone https://github.com/VCDP/MediaSDK.git msdk
 cd msdk
 ```
 
-Then check out intel-media-sg1 branch or release/sg1/pv* tag.
+Then check out intel-media-sg1 branch or intel-media-sg1-pv* tag.
 
 Note: For CentOS, the default gcc/g++ version may be lower than required for MediaSDK build. Please upgrade to devtoolset-7 as following:
 
