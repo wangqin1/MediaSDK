@@ -271,7 +271,9 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     bool bCreateSrfSucceeded = false;
 
 #if defined (USE_OPENGL)
-    mfxU16 va_use_opengl = request->use_opengl;
+    bool va_use_opengl = request->metadata->use_opengl;
+    VADRMPRIMESurfaceDescriptor extsrf;
+    memset(&extsrf, 0, sizeof(extsrf));
 #endif
 
     memset(response, 0, sizeof(mfxFrameAllocResponse));
@@ -300,22 +302,49 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             VASurfaceAttrib attrib[2];
             int attrCnt = 0;
 
-            attrib[attrCnt].type          = VASurfaceAttribPixelFormat;
-            attrib[attrCnt].flags         = VA_SURFACE_ATTRIB_SETTABLE;
-            attrib[attrCnt].value.type    = VAGenericValueTypeInteger;
-
-#if defined(USE_OPENGL)            
-            if (va_use_opengl > 0)
+#if defined (USE_OPENGL)
+            if (va_use_opengl == true)
             {
-                attrib[attrCnt++].value.value.i = VA_FOURCC_ABGR;
+                extsrf.fourcc = VA_FOURCC_RGBA;
+                extsrf.width = request->Info.Width;
+                extsrf.height = request->Info.Height;
+                extsrf.num_objects = 1;
+                extsrf.objects[0].fd = request->metadata->prime_fd;
+                extsrf.objects[0].size = request->Info.Width * request->Info.Height * 4;
+                extsrf.objects[0].drm_format_modifier = request->metadata->modifier;
+                extsrf.num_layers = 1;
+                extsrf.layers[0].drm_format = request->metadata->fourcc;
+                extsrf.layers[0].num_planes = request->metadata->num_plane;
+                extsrf.layers[0].pitch[0] = request->metadata->stride;
+                extsrf.layers[0].offset[0] = request->metadata->offset;
+
+                attrib[attrCnt].type            = VASurfaceAttribMemoryType;
+                attrib[attrCnt].flags           = VA_SURFACE_ATTRIB_SETTABLE;
+                attrib[attrCnt].value.type      = VAGenericValueTypeInteger;
+                attrib[attrCnt++].value.value.i = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2;
+
+                attrib[attrCnt].type            = VASurfaceAttribExternalBufferDescriptor;
+                attrib[attrCnt].flags           = VA_SURFACE_ATTRIB_SETTABLE;
+                attrib[attrCnt].value.type      = VAGenericValueTypeInteger;
+                attrib[attrCnt++].value.value.p =  &extsrf;
+
+                format = VA_RT_FORMAT_RGB32;
             }
             else
             {
+                attrib[attrCnt].type          = VASurfaceAttribPixelFormat;
+                attrib[attrCnt].flags         = VA_SURFACE_ATTRIB_SETTABLE;
+                attrib[attrCnt].value.type    = VAGenericValueTypeInteger;
                 attrib[attrCnt++].value.value.i = va_fourcc;
+
                 format = va_fourcc;
             }
 #else
+            attrib[attrCnt].type          = VASurfaceAttribPixelFormat;
+            attrib[attrCnt].flags         = VA_SURFACE_ATTRIB_SETTABLE;
+            attrib[attrCnt].value.type    = VAGenericValueTypeInteger;
             attrib[attrCnt++].value.value.i = va_fourcc;
+
             format = va_fourcc;
 #endif
 
@@ -350,11 +379,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 format = VA_RT_FORMAT_RGBP;
             }
 
-#if defined (USE_OPENGL)
-            if (va_use_opengl > 0)
-                format = VA_RT_FORMAT_RGB32;
-#endif
-
             va_res = m_libva->vaCreateSurfaces(m_dpy,
                                     format,
                                     request->Info.Width, request->Info.Height,
@@ -364,19 +388,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
             mfx_res = va_to_mfx_status(va_res);
             bCreateSrfSucceeded = (MFX_ERR_NONE == mfx_res);
-
-#if defined (USE_OPENGL)
-            if (va_use_opengl > 0) // pass surface handle to request
-            {
-                uint32_t export_flags = VA_EXPORT_SURFACE_SEPARATE_LAYERS;
-                VADRMPRIMESurfaceDescriptor va_desc;
-                va_res = m_libva->vaExportSurfaceHandle(m_dpy, surfaces[0], 
-                                            VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
-                                            export_flags, &va_desc);
-                request->handle = va_desc.objects[0].fd;
-            }
-#endif
-
         }
         else
         {
