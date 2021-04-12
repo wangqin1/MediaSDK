@@ -125,6 +125,37 @@ typedef mfxHDL              mfxMemId;
 typedef void*               mfxThreadTask;
 typedef char                mfxChar;
 
+/*! The mfxDataType enumerates data type for mfxDataType. */
+typedef enum {
+    MFX_DATA_TYPE_UNSET   = 0,            /*!< Undefined type. */
+    MFX_DATA_TYPE_U8,                     /*!< 8-bit unsigned integer. */
+    MFX_DATA_TYPE_I8,                     /*!< 8-bit signed integer. */
+    MFX_DATA_TYPE_U16,                    /*!< 16-bit unsigned integer. */
+    MFX_DATA_TYPE_I16,                    /*!< 16-bit signed integer. */
+    MFX_DATA_TYPE_U32,                    /*!< 32-bit unsigned integer. */
+    MFX_DATA_TYPE_I32,                    /*!< 32-bit signed integer. */
+    MFX_DATA_TYPE_U64,                    /*!< 64-bit unsigned integer. */
+    MFX_DATA_TYPE_I64,                    /*!< 64-bit signed integer. */
+    MFX_DATA_TYPE_F32,                    /*!< 32-bit single precision floating point. */
+    MFX_DATA_TYPE_F64,                    /*!< 64-bit double precision floating point. */
+}mfxDataType;
+
+/*! The mfxVariantType enumerator data types for mfxVariantType. */
+typedef enum {
+    MFX_VARIANT_TYPE_UNSET = MFX_DATA_TYPE_UNSET,                        /*!< Undefined type. */
+    MFX_VARIANT_TYPE_U8    = MFX_DATA_TYPE_U8,                           /*!< 8-bit unsigned integer. */
+    MFX_VARIANT_TYPE_I8    = MFX_DATA_TYPE_I8,                           /*!< 8-bit signed integer. */
+    MFX_VARIANT_TYPE_U16   = MFX_DATA_TYPE_U16,                          /*!< 16-bit unsigned integer. */
+    MFX_VARIANT_TYPE_I16   = MFX_DATA_TYPE_I16,                          /*!< 16-bit signed integer. */
+    MFX_VARIANT_TYPE_U32   = MFX_DATA_TYPE_U32,                          /*!< 32-bit unsigned integer. */
+    MFX_VARIANT_TYPE_I32   = MFX_DATA_TYPE_I32,                          /*!< 32-bit signed integer. */
+    MFX_VARIANT_TYPE_U64   = MFX_DATA_TYPE_U64,                          /*!< 64-bit unsigned integer. */
+    MFX_VARIANT_TYPE_I64   = MFX_DATA_TYPE_I64,                          /*!< 64-bit signed integer. */
+    MFX_VARIANT_TYPE_F32   = MFX_DATA_TYPE_F32,                          /*!< 32-bit single precision floating point. */
+    MFX_VARIANT_TYPE_F64   = MFX_DATA_TYPE_F64,                          /*!< 64-bit double precision floating point. */
+    MFX_VARIANT_TYPE_PTR,                                                /*!< Generic type pointer. */
+} mfxVariantType;
+
 typedef struct {
     mfxI16  x;
     mfxI16  y;
