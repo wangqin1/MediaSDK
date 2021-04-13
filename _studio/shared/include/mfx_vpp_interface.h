@@ -1,5 +1,5 @@
-// Copyright (c) 2018-2020 Intel Corporation
-// 
+// Copyright (c) 2018-2021 Intel Corporation
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -186,6 +186,10 @@ namespace MfxHwVideoProcessing
 
         mfxU32 uMirroring;
 
+        mfxU32 uFieldProcessing;
+
+        mfxU32 u3DLut;
+
         mfxVppCaps()
             : uAdvancedDI(0)
             , uSimpleDI(0)
@@ -213,6 +217,8 @@ namespace MfxHwVideoProcessing
             , uChromaSiting(0)
             , mFormatSupport()
             , uMirroring(0)
+            , uFieldProcessing(0)
+            , u3DLut(0)
         {
         };
     };
@@ -251,6 +257,15 @@ namespace MfxHwVideoProcessing
                     || TransferMatrix != other.TransferMatrix
                     || NominalRange   != other.NominalRange;
             }
+        };
+
+        struct Lut3DInfo {
+            bool                      Enabled;
+            mfxMemId                  MemId;
+            mfxDataType               DataType;
+            mfxResourceType           BufferType;
+            mfx3DLutMemoryLayout      MemLayout;
+            mfx3DLutChannelMapping    ChannelMapping;
         };
 
     public:
@@ -328,6 +343,7 @@ namespace MfxHwVideoProcessing
 
                    VideoSignalInfo.clear();
                    VideoSignalInfo.assign(1, VideoSignalInfoIn);
+                   lut3DInfo= {};
             };
 
             bool IsDoNothing()
@@ -362,6 +378,7 @@ namespace MfxHwVideoProcessing
 #ifdef MFX_ENABLE_MCTF
                     || bEnableMctf != false
 #endif
+                    || lut3DInfo.Enabled != false
                 )
                     return false;
                 if (VideoSignalInfoIn != VideoSignalInfoOut)
@@ -457,6 +474,10 @@ namespace MfxHwVideoProcessing
 #endif
 #endif
         bool reset;
+#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+        GPU_SYNC_EVENT_HANDLE m_GpuEvent;
+#endif
+        Lut3DInfo    lut3DInfo;
     };
 
     class DriverVideoProcessing
