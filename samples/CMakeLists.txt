@@ -31,3 +31,5 @@ add_subdirectory(sample_plugins/rotate_cpu)
 add_subdirectory(sample_plugins/rotate_opencl)
 add_subdirectory(sample_plugins/vpp_plugin)
 add_subdirectory(metrics_monitor)
+
+install( DIRECTORY ../tests/content DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/mfx/samples/_bin )
