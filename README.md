@@ -115,6 +115,7 @@ Requires Microsoft Visual Studio 2017 for building.
 # How to build
 
 ## Build steps
+MediaSDK has dependency on LibVA. Before building MediaSDK, please build and install libva first.
 
 Get sources with the following Git* command (pay attention that to get full Media SDK sources bundle it is required to have Git* with [LFS](https://git-lfs.github.com/) support):
 ```sh
@@ -131,19 +132,19 @@ sudo yum install centos-release-scl
 sudo yum install devtoolset-7
 ```
 
-Then run below command to switch to devtoolset-7 environment to make MediaSDK source code:
+Then run below command to switch to devtoolset-7 environment to build MediaSDK source code:
 
 ```sh
-scl enable devtoolset-7 bash
+source /opt/rh/devtoolset-7/enable
 ```
 
-To configure and build Media SDK, install cmake version 3.6 or later and run the following commands:
+To configure and build Media SDK, install cmake version 3.6 or later and then run the following commands:
 
 ```sh
 mkdir build && cd build
 cmake ..
-make
-make install
+make -j $(nproc)
+sudo make install
 ```
 
 Media SDK depends on a number of packages which are identified and checked for the proper version during configuration stage. Please, make sure to install these packages to satisfy Media SDK requirements. After successful configuration 'make' will build Media SDK binaries and samples. The following cmake configuration options can be used to customize the build:
