@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2021, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -61,6 +61,9 @@ protected:
     virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
     virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
     virtual mfxStatus ReallocImpl(mfxMemId midIn, const mfxFrameInfo *info, mfxU16 memType, mfxMemId *midOut);
+
+    virtual mfxStatus Create3DLutMemory(mfxMemId memId, const char*lut3d_file_name) {return MFX_ERR_NONE; }
+    virtual mfxStatus Release3DLutMemory(mfxMemId memId) {return MFX_ERR_NONE; }
 
     MFXBufferAllocator *m_pBufferAllocator;
     bool m_bOwnBufferAllocator;

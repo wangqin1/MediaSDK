@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2021, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -87,6 +87,9 @@ public:
 
     virtual mfxStatus Init(mfxAllocatorParams *pParams);
     virtual mfxStatus Close();
+
+    virtual mfxStatus Create3DLutMemory(mfxMemId memId, const char*lut3d_file_name);
+    virtual mfxStatus Release3DLutMemory(mfxMemId memId);
 
 protected:
     DISALLOW_COPY_AND_ASSIGN(vaapiFrameAllocator);

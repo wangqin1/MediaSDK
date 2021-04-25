@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2019, Intel Corporation
+Copyright (c) 2005-2021, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -362,6 +362,10 @@ namespace TranscodingSample
         bool shouldPrintPresets;
 
         bool rawInput;
+
+        //3DLut Binary File
+        msdk_char str3DLutFile[MSDK_MAX_FILENAME_LEN] = {};
+        bool bEnable3DLut;
     };
 
     struct sInputParams: public __sInputParams
@@ -925,6 +929,14 @@ namespace TranscodingSample
         bool bPrefferiGfx;
         bool bPrefferdGfx;
 #endif
+
+    bool           m_b3DLutEnable;
+    // 3DLUT video memory default is 65*65*128*4*2 bytes
+    mfxU32         m_n3DLutVMemId;
+    mfxU32         m_n3DLutVWidth;
+    mfxU32         m_n3DLutVHeight;
+    msdk_char*     m_p3DLutFile;
+
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
 
