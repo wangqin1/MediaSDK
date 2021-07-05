@@ -41,6 +41,17 @@ MFX_LOCAL_SRC_FILES_HW += $(addprefix mfx_lib/genx/h264_encode/isa/, \
     genx_histogram_gen12lp_isa.cpp)
 
 MFX_LOCAL_SRC_FILES_HW += \
+    enctools/aenc/src/aenc.cpp \
+    enctools/aenc/src/av1_asc.cpp \
+    enctools/aenc/src/av1_asc_agop_tree.cpp \
+    enctools/aenc/src/av1_asc_tree.cpp \
+    enctools/enctools.cpp \
+    enctools/src/mfx_enctools_aenc.cpp \
+    enctools/src/mfx_enctools_allocator.cpp \
+    enctools/src/mfx_enctools_brc.cpp \
+    enctools/src/mfx_enctools_common.cpp \
+    enctools/src/mfx_enctools_lpla.cpp \
+    enctools/src/mfx_enctools_utils.cpp \
     mfx_lib/encode_hw/hevc/hevcehw_disp.cpp \
     mfx_lib/encode_hw/hevc/agnostic/hevcehw_base.cpp \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_impl.cpp \
@@ -49,6 +60,7 @@ MFX_LOCAL_SRC_FILES_HW += \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_dirty_rect.cpp \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_dpb_report.cpp \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_encoded_frame_info.cpp \
+    mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_enctools.cpp \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_ext_brc.cpp \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_hdr_sei.cpp \
     mfx_lib/encode_hw/hevc/agnostic/base/hevcehw_base_hrd.cpp \
@@ -98,6 +110,9 @@ MFX_LOCAL_INCLUDES_HW := \
     $(MFX_HOME)/_studio/mfx_lib/genx/mctf/isa \
     $(MFX_HOME)/_studio/mfx_lib/genx/asc/isa \
     $(MFX_HOME)/_studio/shared/asc/include \
+    $(MFX_HOME)/_studio/enctools/include \
+    $(MFX_HOME)/_studio/enctools/aenc/include \
+    $(MFX_HOME)/_studio/mfx_lib/lpla \
     $(MFX_HOME)/_studio/mfx_lib/encode_hw/hevc \
     $(MFX_HOME)/_studio/mfx_lib/encode_hw/hevc/agnostic \
     $(MFX_HOME)/_studio/mfx_lib/encode_hw/hevc/agnostic/base \
@@ -243,7 +258,7 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL_HW) \
-    -Wall -Werror -Wno-unused-parameter
+    -Wall -Werror -Wno-unused-parameter -Wno-unused-function -Wno-unused-lambda-capture -Wno-unused-variable -Wno-unused-value -Wno-missing-field-initializers -Wno-missing-braces -Wno-tautological-pointer-compare
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
