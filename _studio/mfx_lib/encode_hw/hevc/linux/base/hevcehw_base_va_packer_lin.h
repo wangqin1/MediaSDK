@@ -114,6 +114,7 @@ public:
             , std::list<std::vector<mfxU8>>&>;
         std::map<VAEncMiscParameterType, TAddMiscData> AddPerPicMiscData;
         std::map<VAEncMiscParameterType, TAddMiscData> AddPerSeqMiscData;
+        std::map<VAEncMiscParameterType, TAddMiscData>::iterator it;
     };
 
     using CC = StorageVar<Base::Glob::ReservedKey0, CallChains>;

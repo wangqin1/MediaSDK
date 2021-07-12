@@ -983,6 +983,7 @@ void VAPacker::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
     Push(BLK_QueryTask
         , [](StorageW& global, StorageW& s_task) -> mfxStatus
     {
+        auto& cc = CC::Get(global);
         auto& fb = Glob::DDI_Feedback::Get(global);
         MFX_CHECK(!fb.bNotReady, MFX_TASK_BUSY);
 
@@ -1000,6 +1001,18 @@ void VAPacker::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
         SetIf(rtErr, sts < MFX_ERR_NONE, sts);
 
         fb.Remove(task.StatusReportId);
+
+        for (cc.it = cc.AddPerPicMiscData.begin(); cc.it != cc.AddPerPicMiscData.end(); )
+        {
+            if (cc.it->first == VAEncMiscParameterTypeRateControl || cc.it->first == VAEncMiscParameterTypeRIR)
+            {
+                 cc.it = cc.AddPerPicMiscData.erase(cc.it);
+            }
+            else
+            {
+                 cc.it++;
+            }
+        }
 
         return sts;
     });
