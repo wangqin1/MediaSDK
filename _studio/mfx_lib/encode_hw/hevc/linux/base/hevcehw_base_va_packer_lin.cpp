@@ -297,8 +297,11 @@ void AddVaMiscRC(
     rc.target_frame_size = task.TCBRCTargetFrameSize;
 #endif
 
-    rc.min_qp = task.m_minQP;
-    rc.max_qp = task.m_maxQP;
+    if (IsOn(par.mfx.LowPower))
+    {
+        rc.min_qp = task.m_minQP;
+        rc.max_qp = task.m_maxQP;
+    }
 
 #ifdef MFX_ENABLE_QVBR
     const mfxExtCodingOption3& CO3 = ExtBuffer::Get(par);

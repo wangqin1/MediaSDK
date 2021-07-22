@@ -4247,7 +4247,7 @@ mfxStatus Legacy::CheckBRC(
 
         changed += !defPar.caps.SliceByteSizeCtrl && CheckOrZero<mfxU32, 0>(pCO2->MaxSliceSize);
 
-        bool bMinMaxQpAllowed = par.mfx.RateControlMethod != MFX_RATECONTROL_CQP;
+        bool bMinMaxQpAllowed = (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP) && (IsOn(par.mfx.LowPower) || (IsSWBRC(par, pCO2)));
 
         if (bMinMaxQpAllowed)
         {
