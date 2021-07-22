@@ -55,6 +55,7 @@ namespace Base
     DECL_BLOCK(GetFrameCtrl)\
     DECL_BLOCK(UpdateTask)\
     DECL_BLOCK(Update)\
+    DECL_BLOCK(Discard)\
     DECL_BLOCK(Close)\
     DECL_BLOCK(SetDefaults)\
     DECL_BLOCK(QueryIOSurf)
@@ -73,6 +74,7 @@ namespace Base
         virtual void InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push) override;
         virtual void SubmitTask(const FeatureBlocks& blocks, TPushST Push) override;
         virtual void QueryTask(const FeatureBlocks& blocks, TPushQT Push) override;
+        virtual void FreeTask(const FeatureBlocks& blocks, TPushQT Push) override;
 
         virtual void Reset(const FeatureBlocks& blocks, TPushR Push) override;
         virtual void ResetState(const FeatureBlocks& blocks, TPushRS Push) override;

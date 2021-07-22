@@ -1183,6 +1183,19 @@ void HevcEncTools::QueryTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
     });
 }
 
+void HevcEncTools::FreeTask(const FeatureBlocks& /*blocks*/, TPushQT Push)
+{
+    Push(BLK_Discard
+        , [this](StorageW& /*global*/, StorageW& s_task)->mfxStatus
+    {
+        MFX_CHECK(m_pEncTools && m_pEncTools->Discard, MFX_ERR_NONE);
+
+        auto& task = Task::Common::Get(s_task);
+
+        return m_pEncTools->Discard(m_pEncTools->Context, task.DisplayOrder);
+    });
+}
+
 void HevcEncTools::Close(const FeatureBlocks& /*blocks*/, TPushCLS Push)
 {
     Push(BLK_Close
