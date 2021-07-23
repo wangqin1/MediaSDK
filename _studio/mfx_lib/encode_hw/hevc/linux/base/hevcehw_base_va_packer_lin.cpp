@@ -296,8 +296,7 @@ void AddVaMiscRC(
 #if VA_CHECK_VERSION(1, 10, 0)
     rc.target_frame_size = task.TCBRCTargetFrameSize;
 #endif
-
-    if (IsOn(par.mfx.LowPower))
+    if (IsOn(par.mfx.LowPower) && (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP))
     {
         rc.min_qp = task.m_minQP;
         rc.max_qp = task.m_maxQP;
