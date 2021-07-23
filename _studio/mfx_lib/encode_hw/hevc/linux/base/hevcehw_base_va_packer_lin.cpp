@@ -437,8 +437,9 @@ static bool FillCUQPDataVA(
         mfxU32 ih = 8;
         mfxU32 ibw = HEVCParam.PicWidthInLumaSamples / iw;
         mfxU32 ibh = HEVCParam.PicHeightInLumaSamples / ih;
-        mfxU32 mapBw = 64;
-        mfxU32 mapBh = 64;
+
+        mfxU32 mapBw = 16;
+        mfxU32 mapBh = 16;
         // Fill all LCU blocks
 
         for (mfxU32 i = 0; i < cuqpMap.m_h_aligned; i++)
