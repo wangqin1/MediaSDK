@@ -3161,6 +3161,18 @@ mfxStatus CTranscodingPipeline::InitVppMfxParams(sInputParams *pInParams)
         m_b3DLutEnable = true;
         m_p3DLutFile = pInParams->str3DLutFile;
 
+        //configure video signal info for input and output
+        auto inSignalInfo = m_mfxVppParams.AddExtBuffer<mfxExtVideoSignalInfo>();
+        inSignalInfo->Header.BufferId		 = MFX_EXTBUFF_VIDEO_SIGNAL_INFO_IN;
+        inSignalInfo->Header.BufferSz		 = sizeof(mfxExtVideoSignalInfo);
+        inSignalInfo->VideoFullRange 		 = 0; // Limited range P010
+        inSignalInfo->ColourPrimaries		 = 9; // BT.2020
+
+        auto outSignalInfo = m_mfxVppParams.AddExtBuffer<mfxExtVideoSignalInfo>();
+        outSignalInfo->Header.BufferId		 = MFX_EXTBUFF_VIDEO_SIGNAL_INFO_OUT;
+        outSignalInfo->Header.BufferSz		  = sizeof(mfxExtVideoSignalInfo);
+        outSignalInfo->VideoFullRange		  = 0; // Limited range NV12
+        outSignalInfo->ColourPrimaries		  = 1; // BT.709
     }
     if (enhFilterCount)
     {
