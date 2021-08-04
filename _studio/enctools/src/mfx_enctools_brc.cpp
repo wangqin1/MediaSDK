@@ -1950,7 +1950,7 @@ mfxStatus BRC_EncTool::ProcessFrame(mfxU32 dispOrder, mfxEncToolsBRCQuantControl
         frameStructItr->QpMap[i] = 0;
 
     if (m_par.codecId == MFX_CODEC_HEVC && m_par.mMBBRC) {
-        if (type != MFX_FRAMETYPE_B) {
+        if (type != MFX_FRAMETYPE_B && (isIntra || frameStruct.encOrder >= m_ctx.LastMBQpSetOrder + MBQP_P_UPDATE_DIST)) {
             mfxU16 count = 0;
             for (mfxU32 q = 0; q < 8; q++) {
                 for (mfxU32 r = 0; r < 16; r++) {
@@ -1959,6 +1959,8 @@ mfxStatus BRC_EncTool::ProcessFrame(mfxU32 dispOrder, mfxEncToolsBRCQuantControl
                 }
             }
             frameStructItr->QpMapNZ = count;
+            if(count)
+                m_ctx.LastMBQpSetOrder = frameStruct.encOrder;
         }
     }
 
