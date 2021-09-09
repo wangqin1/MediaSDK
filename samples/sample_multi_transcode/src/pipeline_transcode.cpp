@@ -198,8 +198,8 @@ CTranscodingPipeline::CTranscodingPipeline():
 
 CTranscodingPipeline::~CTranscodingPipeline()
 {
-    m_b3DLutEnable = false;
     Close();
+    m_b3DLutEnable = false;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
 mfxStatus CTranscodingPipeline::CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams)
