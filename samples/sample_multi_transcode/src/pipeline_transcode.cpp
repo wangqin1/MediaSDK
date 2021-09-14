@@ -1690,6 +1690,7 @@ mfxStatus CTranscodingPipeline::Transcode()
     ExtendedSurface DecExtSurface = {0};
     ExtendedSurface VppExtSurface = {0};
     ExtendedBS *pBS = NULL;
+    mfxU8 DecodeLastFrameBeUsed   = 0;
     bool bNeedDecodedFrames = true; // indicates if we need to decode frames
     bool bEndOfFile = false;
     bool bLastCycle = false;
@@ -1852,8 +1853,13 @@ mfxStatus CTranscodingPipeline::Transcode()
         SetEncCtrlRT(VppExtSurface, m_bInsertIDR);
         m_bInsertIDR = false;
 
-        if (bNeedDecodedFrames)
+        //When DecodeLastFrame() is executed twice, the input file is read.
+        if (bNeedDecodedFrames && (DecodeLastFrameBeUsed < 2))
+        {
             m_nProcessedFramesNum++;
+            if(bEndOfFile)
+                DecodeLastFrameBeUsed++;
+        }
 
         if(m_mfxEncParams.mfx.CodecId != MFX_CODEC_DUMP)
         {
