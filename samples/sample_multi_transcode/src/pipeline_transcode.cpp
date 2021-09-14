@@ -1702,7 +1702,7 @@ mfxStatus CTranscodingPipeline::Transcode()
 
         if (time(0) - start >= m_nTimeout)
             bLastCycle = true;
-        if (m_MaxFramesForTranscode == m_nProcessedFramesNum || bEndOfFile)
+        if (m_MaxFramesForTranscode == m_nProcessedFramesNum)
         {
             DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
             bNeedDecodedFrames = false; // no more decoded frames needed
