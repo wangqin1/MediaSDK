@@ -111,6 +111,7 @@ void Legacy::SetSupported(ParamSupport& blocks)
         auto& buf_dst = *(mfxExtHEVCTiles*)pDst;
         MFX_COPY_FIELD(NumTileRows);
         MFX_COPY_FIELD(NumTileColumns);
+        MFX_COPY_FIELD(RestrictedMVInTile);
     });
     blocks.m_ebCopySupported[MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION].emplace_back(
         [](const mfxExtBuffer* pSrc, mfxExtBuffer* pDst) -> void
@@ -446,6 +447,7 @@ void Legacy::SetInherited(ParamInheritance& par)
         INIT_EB(mfxExtHEVCTiles);
         INHERIT_OPT(NumTileColumns);
         INHERIT_OPT(NumTileRows);
+        INHERIT_OPT(RestrictedMVInTile);
     });
 
     par.m_ebInheritDefault[MFX_EXTBUFF_CODING_OPTION].emplace_back(

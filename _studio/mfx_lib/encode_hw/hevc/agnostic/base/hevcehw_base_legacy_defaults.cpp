@@ -1857,6 +1857,7 @@ public:
         const mfxExtCodingOption&   CO        = ExtBuffer::Get(defPar.mvp);
         const mfxExtCodingOption2&  CO2       = ExtBuffer::Get(defPar.mvp);
         const mfxExtCodingOption3&  CO3       = ExtBuffer::Get(defPar.mvp);
+        const mfxExtHEVCTiles&      HEVCTiles = ExtBuffer::Get(defPar.mvp);
         auto  hw  = defPar.hw;
         auto& mfx = defPar.mvp.mfx;
 
@@ -2040,6 +2041,7 @@ public:
             pps.uniform_spacing_flag      = 1;
             pps.num_tile_columns_minus1   = nTCol - 1;
             pps.num_tile_rows_minus1      = nTRow - 1;
+            pps.RestrictedMVInTile        = HEVCTiles.RestrictedMVInTile;
 
             mfxI32 i = -1;
             std::generate(std::begin(pps.column_width), std::end(pps.column_width)

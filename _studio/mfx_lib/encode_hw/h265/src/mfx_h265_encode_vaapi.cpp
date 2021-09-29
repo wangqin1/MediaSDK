@@ -590,6 +590,7 @@ void FillConstPartOfPps(
     pps.pps_cr_qp_offset        = (mfxU8)par.m_pps.cr_qp_offset;
     pps.num_tile_columns_minus1 = (mfxU8)par.m_pps.num_tile_columns_minus1;
     pps.num_tile_rows_minus1    = (mfxU8)par.m_pps.num_tile_rows_minus1;
+    pps.restricted_mv_in_tile   = (mfxU8)par.m_pps.RestrictedMVInTile;
 
     for (size_t i = 0; i < (par.m_pps.num_tile_columns_minus1 + 1u); ++i)
         pps.column_width_minus1[i] = par.m_pps.column_width[i] - 1;

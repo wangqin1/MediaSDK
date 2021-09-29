@@ -1832,7 +1832,8 @@ typedef struct {
 
     mfxU16 NumTileRows;
     mfxU16 NumTileColumns;
-    mfxU16 reserved[74];
+    mfxU16 RestrictedMVInTile;
+    mfxU16 reserved[73];
 }mfxExtHEVCTiles;
 MFX_PACK_END()
 

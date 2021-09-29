@@ -493,7 +493,7 @@ struct PPS
     mfxU32                                           : 10;
     mfxI8  cb_qp_offset_list[6];
     mfxI8  cr_qp_offset_list[6];
-
+    mfxU8  RestrictedMVInTile;
 };
 
 

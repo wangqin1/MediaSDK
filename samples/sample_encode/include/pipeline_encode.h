@@ -122,6 +122,7 @@ struct sInputParams
 
     mfxU16 nEncTileRows; // number of rows for encoding tiling
     mfxU16 nEncTileCols; // number of columns for encoding tiling
+    mfxU16 ConstrainedMV; // flag for constraining MV in tile border
 
     msdk_string strQPFilePath;
 

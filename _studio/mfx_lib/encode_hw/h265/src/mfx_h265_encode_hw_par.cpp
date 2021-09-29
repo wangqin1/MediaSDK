@@ -531,6 +531,11 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
         nSlice = nTile;
     }
 
+    if (par.m_ext.HEVCTiles.RestrictedMVInTile)
+    {
+        nSlice = nTile;
+    }
+
     std::vector<mfxU32> colWidth(nTCol, 0);
     std::vector<mfxU32> rowHeight(nTRow, 0);
     std::vector<mfxU32> colBd(nTCol+1, 0);
@@ -1219,6 +1224,7 @@ void InheritDefaultValues(
 
     InheritOption(extHEVCTilInit->NumTileColumns,  extHEVCTilReset->NumTileColumns);
     InheritOption(extHEVCTilInit->NumTileRows,     extHEVCTilReset->NumTileRows);
+    InheritOption(extHEVCTilInit->RestrictedMVInTile, extHEVCTilReset->RestrictedMVInTile);
 
     mfxExtCodingOption const * extOptInit  = &parInit.m_ext.CO;
     mfxExtCodingOption *       extOptReset = &parReset.m_ext.CO;
@@ -2768,6 +2774,9 @@ void SetDefaults(
     if (!par.m_ext.HEVCTiles.NumTileRows)
         par.m_ext.HEVCTiles.NumTileRows = 1;
 
+    if ((par.m_ext.HEVCTiles.NumTileRows == 1) && (par.m_ext.HEVCTiles.NumTileColumns == 1))
+        par.m_ext.HEVCTiles.RestrictedMVInTile = 0;
+ 
     if (!par.mfx.NumSlice || !par.m_slice.size())
     {
         MakeSlices(par, hwCaps.ddi_caps.SliceStructure);

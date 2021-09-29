@@ -666,6 +666,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
             auto hevcTiles = m_mfxEncParams.AddExtBuffer<mfxExtHEVCTiles>();
             hevcTiles->NumTileRows = pInParams->nEncTileRows;
             hevcTiles->NumTileColumns = pInParams->nEncTileCols;
+            hevcTiles->RestrictedMVInTile = pInParams->ConstrainedMV;
         }
 #if MFX_VERSION >= MFX_VERSION_NEXT
         else if (m_mfxEncParams.mfx.CodecId == MFX_CODEC_VP9)
@@ -769,7 +770,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         (pInParams->BitrateLimit && pInParams->CodecId == MFX_CODEC_AVC) ||
         (pInParams->nExtBRC && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)) ||
         pInParams->IntRefType || pInParams->IntRefCycleSize || pInParams->IntRefQPDelta ||
-        pInParams->AdaptiveI || pInParams->AdaptiveB)
+        pInParams->AdaptiveI || pInParams->AdaptiveB || pInParams->ConstrainedMV)
     {
         auto codingOption2 = m_mfxEncParams.AddExtBuffer<mfxExtCodingOption2>();
 
@@ -778,6 +779,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         codingOption2->MaxFrameSize = pInParams->nMaxFrameSize;
         codingOption2->BRefType = pInParams->nBRefType;
         codingOption2->BitrateLimit = pInParams->BitrateLimit;
+        if (pInParams->ConstrainedMV)
+            codingOption2->DisableDeblockingIdc = 1;
 
         if (pInParams->nExtBRC != EXTBRC_DEFAULT && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC))
         {

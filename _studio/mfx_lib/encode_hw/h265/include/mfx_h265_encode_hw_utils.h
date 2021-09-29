@@ -474,6 +474,7 @@ namespace ExtBuffer
     {
         MFX_COPY_FIELD(NumTileRows);
         MFX_COPY_FIELD(NumTileColumns);
+        MFX_COPY_FIELD(RestrictedMVInTile);
     }
 
     inline void CopySupportedParams (mfxExtCodingOption& buf_dst, mfxExtCodingOption& buf_src)

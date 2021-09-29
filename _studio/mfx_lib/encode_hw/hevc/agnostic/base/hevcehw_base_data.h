@@ -511,6 +511,7 @@ namespace Base
         mfxI8  cr_qp_offset_list[6];
 
         mfxU8 ExtensionFlags;
+        mfxU8 RestrictedMVInTile;
     };
 
     struct Slice

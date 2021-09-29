@@ -147,6 +147,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-re]                    - enable region encode mode. Works only with h265 encoder\n"));
     msdk_printf(MSDK_STRING("   [-trows rows]            - Number of rows for tiled encoding\n"));
     msdk_printf(MSDK_STRING("   [-tcols cols]            - Number of columns for tiled encoding\n"));
+    msdk_printf(MSDK_STRING("   [-constrainedMV]         - enable constrained MV in tile border\n"));
     msdk_printf(MSDK_STRING("   [-CodecProfile]          - specifies codec profile\n"));
     msdk_printf(MSDK_STRING("   [-CodecLevel]            - specifies codec level\n"));
     msdk_printf(MSDK_STRING("   [-GopOptFlag:closed]     - closed gop\n"));
@@ -438,6 +439,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nEncTileCols))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Encoding tile column count is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-constrainedMV")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->ConstrainedMV))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("ConstrainedMV flag is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }

@@ -159,6 +159,7 @@ void InitPPS(
     pps.pps_cr_qp_offset        = (mfxU8)bs_pps.cr_qp_offset;
     pps.num_tile_columns_minus1 = (mfxU8)bs_pps.num_tile_columns_minus1;
     pps.num_tile_rows_minus1    = (mfxU8)bs_pps.num_tile_rows_minus1;
+    pps.restricted_mv_in_tile   = (mfxU8)bs_pps.RestrictedMVInTile;
 
     auto NumTileDdiToVa = [](mfxU16 n) { return (uint8_t)std::max<int>(0, n - 1); };
 

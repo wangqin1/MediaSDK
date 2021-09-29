@@ -1484,6 +1484,7 @@ void MfxVideoParam::SyncHeadersToMfxParam()
     {
         m_ext.HEVCTiles.NumTileColumns = m_pps.num_tile_columns_minus1 + 1;
         m_ext.HEVCTiles.NumTileRows = m_pps.num_tile_rows_minus1 + 1;
+        m_ext.HEVCTiles.RestrictedMVInTile = m_pps.RestrictedMVInTile;
     }
 
 #if (MFX_VERSION >= 1026)
@@ -1970,6 +1971,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         m_pps.uniform_spacing_flag      = 1;
         m_pps.num_tile_columns_minus1   = nTCol - 1;
         m_pps.num_tile_rows_minus1      = nTRow - 1;
+        m_pps.RestrictedMVInTile        = m_ext.HEVCTiles.RestrictedMVInTile;
 
         for (mfxU16 i = 0; i < nTCol - 1; i ++)
             m_pps.column_width[i] = ((i + 1) * nCol) / nTCol - (i * nCol) / nTCol;
