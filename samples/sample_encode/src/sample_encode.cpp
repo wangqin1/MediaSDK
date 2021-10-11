@@ -201,7 +201,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 #endif
 #if defined(LIBVA_DRM_SUPPORT)
     msdk_printf(MSDK_STRING("   [-vacopy mode] - use vacopy mode of vaapi for high efficiency gpu copy. Expected values:\n"));
-    msdk_printf(MSDK_STRING("                0(balance), 1(power saving), 2(performance)\n"));
+    msdk_printf(MSDK_STRING("                0(balance), 1(performance), 2(power saving)\n"));
 #endif
 #if defined (ENABLE_V4L2_SUPPORT)
     msdk_printf(MSDK_STRING("   [-d]                            - Device video node (eg: /dev/video0)\n"));

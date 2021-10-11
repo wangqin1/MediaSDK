@@ -1760,6 +1760,8 @@ const msdk_char* ColorFormatToStr(mfxU32 format)
        return MSDK_STRING("P010");
     case MFX_FOURCC_P210:
         return MSDK_STRING("P210");
+    case MFX_FOURCC_AYUV:
+        return MSDK_STRING("AYUV");
 #if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return MSDK_STRING("Y210");

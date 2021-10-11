@@ -489,14 +489,20 @@ mfxStatus CVAAPIDeviceDRM::SetupUserSurface(mfxFrameSurface1 * pSurface)
         m_sysSurfInfo.width = pInfo.Width;
         m_sysSurfInfo.height = pInfo.Height;
 
-        switch(pInfo.FourCC)
+        switch (pInfo.FourCC)
         {
-         case MFX_FOURCC_NV12:
-             m_sysSurfInfo.fourCC = VA_FOURCC_NV12;
-             m_sysSurfInfo.format = VA_FOURCC_NV12;
-             break;
-         default :
-             return MFX_ERR_UNSUPPORTED;
+        case MFX_FOURCC_NV12:
+            m_sysSurfInfo.fourCC = VA_FOURCC_NV12;
+            m_sysSurfInfo.format = VA_FOURCC_NV12;
+            break;
+
+        case MFX_FOURCC_AYUV:
+            m_sysSurfInfo.fourCC = VA_FOURCC_AYUV;
+            m_sysSurfInfo.format = VA_FOURCC_AYUV;
+            break;
+
+        default:
+            return MFX_ERR_UNSUPPORTED;
         }
 
         m_sysSurfInfo.memtype = VA_SURFACE_ATTRIB_MEM_TYPE_USER_PTR;
@@ -516,9 +522,27 @@ mfxStatus CVAAPIDeviceDRM::SetupUserSurface(mfxFrameSurface1 * pSurface)
 
     mfxFrameData *ptr = &(pSurface->Data);
     mfxU8 *p_buf = m_sysSurfInfo.pBufBase;
-    ptr->Y = p_buf;
-    ptr->U = p_buf + pitch * pInfo.Height;
-    ptr->V = ptr->U + 1;
+
+    switch (pInfo.FourCC)
+    {
+    case MFX_FOURCC_NV12:
+        ptr->Y = p_buf;
+        ptr->U = p_buf + pitch * pInfo.Height;
+        ptr->V = ptr->U + 1;
+        break;
+
+    case MFX_FOURCC_AYUV:
+        pitch *= 4;
+        ptr->V = p_buf;
+        ptr->U = ptr->V + 1;
+        ptr->Y = ptr->V + 2;
+        ptr->A = ptr->V + 3;
+        break;
+
+    default:
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     ptr->PitchHigh = (mfxU16)(pitch / (1 << 16));
     ptr->PitchLow  = (mfxU16)(pitch % (1 << 16));
 

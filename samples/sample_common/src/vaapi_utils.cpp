@@ -493,24 +493,36 @@ VAStatus CLibVA::AcquireUserSurface(
     memset(&ext_buffer, 0, sizeof(ext_buffer));
 
     uint32_t pitch_align = surf_info.alignsize;
-    switch(surf_info.fourCC)
+    switch (surf_info.fourCC)
     {
-     case VA_FOURCC_NV12:
-         ext_buffer.pitches[0] = ((surf_info.width + pitch_align -1) /
-                                   pitch_align) *
-                                   pitch_align;
-         size = (ext_buffer.pitches[0] * surf_info.height) * 3/2;// frame size align with pitch.
-         size = (size+base_addr_align-1) /
-                 base_addr_align *
-                 base_addr_align;// frame size align as 4K page.
-         ext_buffer.offsets[0] = 0;// Y channel
-         ext_buffer.offsets[1] = ext_buffer.pitches[0] *
-                                 surf_info.height; // UV channel.
-         ext_buffer.pitches[1] = ext_buffer.pitches[0];
-         ext_buffer.num_planes = 2;
-         break;
-     default :
-         return VA_STATUS_ERROR_UNSUPPORTED_RT_FORMAT;
+    case VA_FOURCC_NV12:
+        ext_buffer.pitches[0] = ((surf_info.width + pitch_align -1) /
+                                  pitch_align) *
+                                  pitch_align;
+        size = (ext_buffer.pitches[0] * surf_info.height) * 3/2;// frame size align with pitch.
+        size = (size+base_addr_align-1) /
+                base_addr_align *
+                base_addr_align;// frame size align as 4K page.
+        ext_buffer.offsets[0] = 0;// Y channel
+        ext_buffer.offsets[1] = ext_buffer.pitches[0] *
+                                    surf_info.height; // UV channel.
+        ext_buffer.pitches[1] = ext_buffer.pitches[0];
+        ext_buffer.num_planes = 2;
+        break;
+
+    case VA_FOURCC_AYUV:
+        ext_buffer.pitches[0] = ((surf_info.width + pitch_align -1) /
+                                  pitch_align) *
+                                  pitch_align * 4;
+        size = (ext_buffer.pitches[0] * surf_info.height);// frame size align with pitch.
+        size = (size+base_addr_align-1) /
+                base_addr_align *
+                base_addr_align;// frame size align as 4K page.
+        ext_buffer.num_planes = 1;
+        break;
+
+    default:
+        return VA_STATUS_ERROR_UNSUPPORTED_RT_FORMAT;
     }
 
     if (!surf_info.pBuf && !surf_info.pBufBase) {
