@@ -941,7 +941,7 @@ namespace MfxHwH264Encode
 
     mfxU8 ConvertMfxFrameType2SliceType(mfxU8 type);
 
-    ENCODE_FRAME_SIZE_TOLERANCE ConvertLowDelayBRCMfx2Ddi(mfxU16 type, bool bTCBRC);
+    ENCODE_FRAME_SIZE_TOLERANCE ConvertLowDelayBRCMfx2Ddi(mfxU16 type);
 
     enum class SliceDividerType
     {

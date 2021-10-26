@@ -7115,11 +7115,11 @@ mfxU8 MfxHwH264Encode::ConvertFrameTypeMfx2Ddi(mfxU32 type)
     }
 }
 
-ENCODE_FRAME_SIZE_TOLERANCE MfxHwH264Encode::ConvertLowDelayBRCMfx2Ddi(mfxU16 type, bool bTCBRC)
+ENCODE_FRAME_SIZE_TOLERANCE MfxHwH264Encode::ConvertLowDelayBRCMfx2Ddi(mfxU16 type)
 {
     switch (type) {
         case MFX_CODINGOPTION_ON:
-            return bTCBRC ? eFrameSizeTolerance_Normal : eFrameSizeTolerance_ExtremelyLow;
+            return eFrameSizeTolerance_ExtremelyLow;
         default:
             return eFrameSizeTolerance_Normal;
     }

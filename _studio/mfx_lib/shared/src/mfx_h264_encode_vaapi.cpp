@@ -233,7 +233,7 @@ mfxStatus SetRateControl(
         rate_param->target_percentage = par.mfx.Accuracy;
     }
 
-    rate_param->rc_flags.bits.frame_tolerance_mode = ConvertLowDelayBRCMfx2Ddi(extOpt3.LowDelayBRC, par.calcParam.TCBRCTargetFrameSize);
+    rate_param->rc_flags.bits.frame_tolerance_mode = ConvertLowDelayBRCMfx2Ddi(extOpt3.LowDelayBRC);
     // Activate frame tolerance sliding window mode
     if (extOpt3.WinBRCSize)
     {
