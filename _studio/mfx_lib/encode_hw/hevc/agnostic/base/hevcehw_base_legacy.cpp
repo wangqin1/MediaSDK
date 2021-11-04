@@ -984,6 +984,7 @@ void Legacy::InitInternal(const FeatureBlocks& /*blocks*/, TPushII Push)
         auto pReorderer = make_storable<Reorderer>();
 
         pReorderer->BufferSize = par.mfx.GopRefDist - 1;
+        pReorderer->MaxReorder = par.mfx.GopRefDist - 1;
         pReorderer->DPB        = &m_prevTask.DPB.After;
 
         pReorderer->Push(
