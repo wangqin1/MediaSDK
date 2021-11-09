@@ -86,6 +86,7 @@ configure_build_variant(fast_copy_sse4_plugin none)
 
 list( APPEND plugin_common_sources
   ${prefix}/cm_mem_copy.cpp
+  ${prefix}/va_mem_copy.cpp
   ${prefix}/fast_copy_c_impl.cpp
   ${prefix}/fast_copy.cpp
   ${prefix}/libmfx_allocator.cpp

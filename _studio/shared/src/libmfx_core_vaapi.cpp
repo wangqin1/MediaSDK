@@ -36,6 +36,7 @@
 #include "umc_va_fei.h"
 
 #include "cm_mem_copy.h"
+#include "va_mem_copy.h"
 
 #include <sys/ioctl.h>
 
@@ -463,6 +464,7 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_bCmCopy(false)
           , m_bCmCopyAllowed(false)
 #endif
+          , m_bVaCopy(false)
           , m_bHEVCFEIEnabled(false)
           , m_maxContextPriority(0)
 {
@@ -475,6 +477,12 @@ VAAPIVideoCORE::~VAAPIVideoCORE()
     {
         m_pCmCopy->Release();
         m_bCmCopy = false;
+    }
+
+    if (m_bVaCopy)
+    {
+        m_pVaCopy->Release();
+        m_bVaCopy = false;
     }
 
     Close();
@@ -622,7 +630,13 @@ VAAPIVideoCORE::AllocFrames(
             else
                 m_bCmCopy = false;
         }
-
+ 
+        if (!m_bVaCopy && isNeedCopy && m_Display){
+            m_pVaCopy.reset(new VaCopyWrapper);
+            sts = m_pVaCopy->Initialize(m_Display);
+            MFX_CHECK_STS(sts);
+            m_bVaCopy = true;
+        }
 
         // use common core for sw surface allocation
         if (request->Type & MFX_MEMTYPE_SYSTEM_MEMORY)
@@ -1151,7 +1165,9 @@ VAAPIVideoCORE::DoFastCopyExtended(
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    bool canUseCMCopy = m_bCmCopy ? CmCopyWrapper::CanUseCmCopy(pDst, pSrc) : false;
+    bool canUseVACopy = m_bVaCopy ? VaCopyWrapper::CanUseVaCopy(pDst, pSrc) : false;
+    bool canUseCMCopy = canUseVACopy ? false : m_bCmCopy ? CmCopyWrapper::CanUseCmCopy(pDst, pSrc) : false;
+
 
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
     {
@@ -1195,6 +1211,11 @@ VAAPIVideoCORE::DoFastCopyExtended(
             if (canUseCMCopy)
             {
                 sts = m_pCmCopy->CopyVideoToSys(pDst, pSrc);
+                MFX_CHECK_STS(sts);
+            }
+            else if (canUseVACopy)
+            {
+                sts = m_pVaCopy->CopyVideoToSys(pDst, pSrc);
                 MFX_CHECK_STS(sts);
             }
             else
@@ -1255,6 +1276,11 @@ VAAPIVideoCORE::DoFastCopyExtended(
         if (canUseCMCopy)
         {
             sts = m_pCmCopy->CopySysToVideo(pDst, pSrc);
+            MFX_CHECK_STS(sts);
+        }
+        else if (canUseVACopy)
+        {
+            sts = m_pVaCopy->CopySysToVideo(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }
         else

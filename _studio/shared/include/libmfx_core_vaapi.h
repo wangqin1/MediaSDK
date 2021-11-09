@@ -86,6 +86,7 @@ struct VaGuidMapper
 };
 
 class CmCopyWrapper;
+class VaCopyWrapper;
 
 // disable the "conditional expression is constant" warning
 #ifdef _MSVC_LANG
@@ -208,6 +209,9 @@ protected:
     bool                                        m_bCmCopy;
     bool                                        m_bCmCopyAllowed;
     std::unique_ptr<CmCopyWrapper>              m_pCmCopy;
+
+    bool                                        m_bVaCopy;
+    std::unique_ptr<VaCopyWrapper>              m_pVaCopy;
 #if defined (MFX_ENABLE_VPP)
     VPPHWResMng                                 m_vpp_hw_resmng;
 #endif

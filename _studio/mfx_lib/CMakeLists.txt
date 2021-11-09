@@ -134,6 +134,7 @@ foreach( prefix ${MSDK_STUDIO_ROOT}/shared/src )
 
   list( APPEND sources
     ${prefix}/cm_mem_copy.cpp
+    ${prefix}/va_mem_copy.cpp
     ${prefix}/fast_copy_c_impl.cpp
     ${prefix}/fast_copy.cpp
     ${prefix}/mfx_vpp_vaapi.cpp
