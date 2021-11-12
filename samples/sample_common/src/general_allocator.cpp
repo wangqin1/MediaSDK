@@ -68,9 +68,21 @@ mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
         MSDK_CHECK_STATUS(sts, "m_D3DAllocator.get failed");
     }
 
+    SysMemAllocatorParams *sysMemAllocParams = dynamic_cast<SysMemAllocatorParams*>(pParams);
     m_SYSAllocator.reset(new SysMemFrameAllocator);
-    sts = m_SYSAllocator.get()->Init(0);
-    MSDK_CHECK_STATUS(sts, "m_SYSAllocator.get failed");
+
+    if (m_SYSAllocator.get())
+    {
+        if (sysMemAllocParams)
+        {
+            sts = m_SYSAllocator.get()->Init(sysMemAllocParams);
+        }
+        else
+        {
+            sts = m_SYSAllocator.get()->Init(0);
+        }
+        MSDK_CHECK_STATUS(sts, "m_SYSAllocator.get failed");
+    }
 
     return sts;
 }

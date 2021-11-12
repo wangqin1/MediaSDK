@@ -1404,6 +1404,18 @@ mfxStatus CDecodingPipeline::CreateAllocator()
         sts = m_mfxSession.SetFrameAllocator(m_pGeneralAllocator);
         MSDK_CHECK_STATUS(sts, "m_mfxSession.SetFrameAllocator failed");
         m_bExternalAlloc = true;
+
+        SysMemAllocatorParams *psysMemAllocParams = new SysMemAllocatorParams;
+        MSDK_CHECK_POINTER(psysMemAllocParams, MFX_ERR_MEMORY_ALLOC);
+        if (m_nVACopy != -1)
+        {
+            psysMemAllocParams->m_nAlignSize = 4096;
+        }
+        else
+        {
+            psysMemAllocParams->m_nAlignSize = 32;
+        }
+        m_pmfxAllocatorParams = psysMemAllocParams;
     }
 
     // initialize memory allocator
@@ -1596,7 +1608,7 @@ mfxStatus CDecodingPipeline::DeliverOutput(mfxFrameSurface1* frame)
     if (m_bExternalAlloc) {
         if (m_eWorkMode == MODE_FILE_DUMP) {
 #if defined(LIBVA_DRM_SUPPORT)
-            if (m_nVACopy != -1) { // vacopy mode
+            if (m_nVACopy != -1 && m_memType != SYSTEM_MEMORY) { // vacopy mode
                 sts = WriteFrameWithVACopy(frame, m_nVACopy);
             } else
 #endif

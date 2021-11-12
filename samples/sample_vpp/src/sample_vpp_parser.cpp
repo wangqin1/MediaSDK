@@ -61,6 +61,7 @@ msdk_printf(MSDK_STRING("   [-d3d11]                    - use d3d11 surfaces\n\n
 #endif
 #ifdef LIBVA_SUPPORT
 msdk_printf(MSDK_STRING("   [-vaapi]                    - work with vaapi surfaces\n\n"));
+msdk_printf(MSDK_STRING("   [-sys]                      - work with system memory\n\n"));
 #endif
 msdk_printf(MSDK_STRING("   [-plugin_guid GUID]\n"));
 msdk_printf(MSDK_STRING("   [-p GUID]                   - use VPP plug-in with specified GUID\n\n"));
@@ -306,6 +307,11 @@ msdk_printf(MSDK_STRING("   [-tc_pos (position)] - Position inside a telecine se
 
 msdk_printf(MSDK_STRING("   [-reset_start (frame number)] - after reaching this frame, encoder will be reset with new parameters, followed after this command and before -reset_end \n"));
 msdk_printf(MSDK_STRING("   [-reset_end]                  - specifies end of reset related options \n\n"));
+
+#if defined(LIBVA_DRM_SUPPORT)
+msdk_printf(MSDK_STRING("   [-vacopy mode] - use vacopy mode of vaapi for high efficiency gpu copy. Expected values:\n"));
+msdk_printf(MSDK_STRING("                    0(balance), 1(performance), 2(power saving)\n\n"));
+#endif
 
 msdk_printf(MSDK_STRING("\n"));
 
@@ -1783,6 +1789,11 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 pParams->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
                 pParams->ImpLib |= MFX_IMPL_VIA_VAAPI;
             }
+            else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-sys")) )
+            {
+                pParams->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+                pParams->ImpLib = MFX_IMPL_HARDWARE;
+            }
 #endif
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")) )
             {
@@ -1804,6 +1815,14 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->numRepeat);
             }
+#if defined(LIBVA_DRM_SUPPORT)
+            else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-vacopy")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                msdk_sscanf(strInput[i], MSDK_STRING("%u"), &pParams->vaCopy);
+            }
+#endif
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pts_check")) )
             {
                 pParams->ptsCheck = true;
@@ -1877,18 +1896,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
         }
     }
 
-
-
-    if ((pParams->ImpLib & MFX_IMPL_HARDWARE) && !(pParams->ImpLib & MFX_IMPL_VIA_D3D11))
-    {
-        pParams->ImpLib = MFX_IMPL_HARDWARE |
-        #ifdef LIBVA_SUPPORT
-                MFX_IMPL_VIA_VAAPI;
-        #else
-                MFX_IMPL_VIA_D3D9;
-        #endif
-    }
-
+    
     std::vector<sOwnFrameInfo>::iterator it = pParams->frameInfoIn.begin();
     while(it != pParams->frameInfoIn.end())
     {

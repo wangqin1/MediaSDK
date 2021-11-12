@@ -1360,6 +1360,18 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         m_pMFXAllocator = new SysMemFrameAllocator;
         MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
 
+        SysMemAllocatorParams *psysMemAllocParams = new SysMemAllocatorParams;
+        MSDK_CHECK_POINTER(psysMemAllocParams, MFX_ERR_MEMORY_ALLOC);
+        if (m_nVACopy != -1)
+        {
+            psysMemAllocParams->m_nAlignSize = 4096;
+        }
+        else
+        {
+            psysMemAllocParams->m_nAlignSize = 32;
+        }
+        m_pmfxAllocatorParams = psysMemAllocParams;
+
         /* In case of system memory we demonstrate "no external allocator" usage model.
         We don't call SetAllocator, Media SDK uses internal allocator.
         We use system memory allocator simply as a memory manager for application*/

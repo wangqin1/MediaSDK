@@ -327,11 +327,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 msdk_printf(MSDK_STRING("error: wrong '-vacopy' parameter. 0(Balanced) will be used.\n"));
                 pParams->nVACopy = 0;
             }
-            if (D3D9_MEMORY != pParams->memType)
-            {
-                msdk_printf(MSDK_STRING("warning: '-vacopy' only works with '-vaapi'. Force to run in '-vaapi' mode.\n"));
-                pParams->memType = D3D9_MEMORY;
-            }
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-low_latency")))

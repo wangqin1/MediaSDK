@@ -719,6 +719,34 @@ mfxStatus InitMemoryAllocator(
 
 #endif
         }
+        else
+        {
+            pAllocator->pDevice = CreateVAAPIDevice(pInParams->strDevicePath);
+            MSDK_CHECK_POINTER(pAllocator->pDevice, MFX_ERR_NULL_PTR);
+
+            MSDK_CHECK_STATUS_SAFE(sts, "pAllocator->pDevice creation failed", WipeMemoryAllocator(pAllocator));
+
+            mfxHDL hdl = 0;
+            sts = pAllocator->pDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
+            MSDK_CHECK_STATUS_SAFE(sts, "pAllocator->pDevice->GetHandle failed", WipeMemoryAllocator(pAllocator));
+
+            sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
+            MSDK_CHECK_STATUS_SAFE(sts, "pAllocator->pDevice->SetHandle failed", WipeMemoryAllocator(pAllocator));
+
+            SysMemAllocatorParams *psysMemAllocParams = new SysMemAllocatorParams;
+            MSDK_CHECK_POINTER(psysMemAllocParams, MFX_ERR_MEMORY_ALLOC);
+
+            if (pInParams->vaCopy != -1)
+            {
+                psysMemAllocParams->m_nAlignSize = 4096;
+            }
+            else
+            {
+                psysMemAllocParams->m_nAlignSize = 32;
+            }
+
+            pAllocator->pAllocatorParams = psysMemAllocParams;
+        }
     }
     else
     {
