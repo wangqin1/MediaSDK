@@ -228,6 +228,7 @@ MFX_LIB_SHARED_FILES_1 := $(addprefix mfx_lib/shared/src/, \
 
 MFX_LIB_SHARED_FILES_2 := $(addprefix shared/src/, \
     cm_mem_copy.cpp \
+    va_mem_copy.cpp \
     fast_copy.cpp \
     fast_copy_c_impl.cpp \
     fast_copy_sse4_impl.cpp \
