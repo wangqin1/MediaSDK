@@ -129,6 +129,8 @@ bool VaCopyWrapper::CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
     if (NULL == pSrc->Data.MemId && NULL != pDst->Data.MemId)
     {
         if ((IsVaCopyFormatSupported(ConvertMfxFourccToVAFormat(pSrc->Info.FourCC))) &&
+            (pSrc->Info.CropX == 0) &&
+            (pSrc->Info.CropY == 0) &&
             ((reinterpret_cast<size_t>(srcPtr) & 0xfff) == 0))
         {
             return true;
@@ -137,6 +139,8 @@ bool VaCopyWrapper::CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
     else if (NULL != pSrc->Data.MemId && NULL == pDst->Data.MemId)
     {
         if ((IsVaCopyFormatSupported(ConvertMfxFourccToVAFormat(pDst->Info.FourCC))) &&
+            (pDst->Info.CropX == 0) &&
+            (pDst->Info.CropY == 0) &&
             ((reinterpret_cast<mfxU64>(dstPtr) & 0xfff) == 0))
         {
             return true;
