@@ -408,7 +408,10 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 #endif // defined(MFX_LIBVA_SUPPORT)
 
 #if defined(LIBVA_DRM_SUPPORT)
-    m_nVACopy = pParams->nVACopy;
+    if (pParams->memType == SYSTEM_MEMORY)
+        m_nVACopy = (pParams->gpuCopy == MFX_GPUCOPY_VEBOX_ON) || (pParams->gpuCopy == MFX_GPUCOPY_BLT_ON) ? 0 : -1;
+    else 
+        m_nVACopy = pParams->nVACopy;
 #endif
 
     sts = GetImpl(*pParams, initPar.Implementation);

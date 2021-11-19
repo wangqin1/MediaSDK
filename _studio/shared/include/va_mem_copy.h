@@ -40,6 +40,13 @@ typedef struct
     uintptr_t ptrb;
 } mfxSurfaceInfo;
 
+enum
+{
+    MFX_COPY_METHOD_VEBOX  = 0,
+    MFX_COPY_METHOD_RENDER = 1,
+    MFX_COPY_METHOD_BLT    = 2
+};
+
 class VaCopyWrapper
 {
 public:
@@ -56,10 +63,12 @@ public:
     // release object
     mfxStatus Release(void);
 
-    static bool CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
+    static bool CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, mfxSize roi);
 
     mfxStatus CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
     mfxStatus CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
+
+    void SetVaCopyMode(mfxU16 mode);
 
 protected:
 
@@ -69,6 +78,8 @@ protected:
     mfxSurfaceInfo m_sysSurfaceInfo;
 
     std::map<VASurfaceID, mfxSurfaceInfo> m_sysSurfaces;
+
+    mfxU32 m_vaCopyMode;
  
     UMC::Mutex m_guard;
 

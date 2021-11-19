@@ -9004,6 +9004,8 @@ The `GPUCopy` enumerator controls usage of GPU accelerated copying between video
 `MFX_GPUCOPY_DEFAULT` | Use default mode for the current SDK implementation.
 `MFX_GPUCOPY_ON` | Enable GPU accelerated copying.
 `MFX_GPUCOPY_OFF` | Disable GPU accelerated copying.
+`MFX_GPUCOPY_VEBOX_ON` | Enable GPU accelerated vebox copying.
+`MFX_GPUCOPY_BLT_ON` | Enable GPU accelerated blitter copying.
 
 **Change History**
 

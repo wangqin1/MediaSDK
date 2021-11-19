@@ -185,7 +185,6 @@ struct sInputParams
 #endif
 
     mfxU16   asyncNum;
-    mfxI32   vaCopy;
     mfxU32   vaType;
 
     std::vector<mfxU16> rotate;
@@ -274,7 +273,6 @@ struct sInputParams
         ptsFR=0;
         forcedOutputFourcc=0;
         numStreams=0;
-        vaCopy=-1;
 
         MSDK_ZERO_MEMORY(strPlgGuid);
         MSDK_ZERO_MEMORY(strSrcFile);

@@ -251,6 +251,9 @@ T* m_pComPtr;
         {
             return MFXICOREVAAPI_GUID;
         }
+
+        virtual mfxStatus SetVaCopyStatus(bool enable, mfxU16 mode) = 0;
+        virtual ~VAAPIInterface() {}
     };
 
 #endif

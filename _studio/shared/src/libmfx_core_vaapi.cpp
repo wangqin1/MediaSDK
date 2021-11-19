@@ -465,6 +465,7 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_bCmCopyAllowed(false)
 #endif
           , m_bVaCopy(false)
+          , m_bVaCopyAllowed(false)
           , m_bHEVCFEIEnabled(false)
           , m_maxContextPriority(0)
 {
@@ -631,7 +632,7 @@ VAAPIVideoCORE::AllocFrames(
                 m_bCmCopy = false;
         }
  
-        if (!m_bVaCopy && isNeedCopy && m_Display){
+        if (!m_bVaCopy && m_bVaCopyAllowed && isNeedCopy && m_Display){
             m_pVaCopy.reset(new VaCopyWrapper);
             sts = m_pVaCopy->Initialize(m_Display);
             MFX_CHECK_STS(sts);
@@ -867,6 +868,19 @@ VAAPIVideoCORE::GetVAService(
     return MFX_ERR_NOT_INITIALIZED;
 
 } // mfxStatus VAAPIVideoCORE::GetVAService(...)
+
+void
+VAAPIVideoCORE::SetVaCopy(bool enable, mfxU16 mode)
+{
+    m_bVaCopyAllowed = enable;
+    if (enable)
+    {
+        if (m_pVaCopy)
+        {
+            m_pVaCopy->SetVaCopyMode(mode);
+        }
+    }
+} // mfxStatus VAAPIVideoCORE::SetVaCopyStatus(...)
 
 void
 VAAPIVideoCORE::SetCmCopy(bool enable)
@@ -1165,7 +1179,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    bool canUseVACopy = m_bVaCopy ? VaCopyWrapper::CanUseVaCopy(pDst, pSrc) : false;
+    bool canUseVACopy = m_bVaCopy ? VaCopyWrapper::CanUseVaCopy(pDst, pSrc, roi) : false;
     bool canUseCMCopy = canUseVACopy ? false : m_bCmCopy ? CmCopyWrapper::CanUseCmCopy(pDst, pSrc) : false;
 
 
@@ -1451,6 +1465,10 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     }
     else if( MFXICOREVAAPI_GUID == guid )
     {
+        if (!m_pAdapter)
+        {
+            m_pAdapter.reset(new VAAPIAdapter(this));
+        }
         return (void*) m_pAdapter.get();
     }
     else if (MFXICORE_GT_CONFIG_GUID == guid)

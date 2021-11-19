@@ -914,7 +914,7 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
     // Linux: but relax this for DG1
                              && (m_pCORE->GetHWType() != MFX_HW_DG1)
         ? (MFX_GPUCOPY_ON != par.GPUCopy)
-        : (MFX_GPUCOPY_OFF == par.GPUCopy);
+        : ((MFX_GPUCOPY_OFF == par.GPUCopy) || (MFX_GPUCOPY_VEBOX_ON == par.GPUCopy) || (MFX_GPUCOPY_BLT_ON == par.GPUCopy));
 
     if (disableGpuCopy)
     {
@@ -922,6 +922,20 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
         if (pCmCore)
         {
             mfxRes = pCmCore->SetCmCopyStatus(false);
+            MFX_CHECK_STS(mfxRes);
+        }
+    }
+
+    const bool enableVaCopy = (m_pCORE->GetVAType() == MFX_HW_VAAPI)
+        ? ((MFX_GPUCOPY_VEBOX_ON == par.GPUCopy) || (MFX_GPUCOPY_BLT_ON == par.GPUCopy))
+        : false;
+
+    if (enableVaCopy)
+    {
+        VAAPIInterface* pVaCore = QueryCoreInterface<VAAPIInterface>(m_pCORE.get());
+        if (pVaCore)
+        {
+            mfxRes = pVaCore->SetVaCopyStatus(true, par.GPUCopy);
             MFX_CHECK_STS(mfxRes);
         }
     }

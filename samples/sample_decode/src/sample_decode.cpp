@@ -121,7 +121,12 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-low_latency]            - configures decoder for low latency mode (supported only for H.264 and JPEG codec)\n"));
     msdk_printf(MSDK_STRING("   [-calc_latency]           - calculates latency during decoding and prints log (supported only for H.264 and JPEG codec)\n"));
     msdk_printf(MSDK_STRING("   [-async]                  - depth of asynchronous pipeline. default value is 4. must be between 1 and 20\n"));
+#if defined(LIBVA_SUPPORT)
+    msdk_printf(MSDK_STRING("   [-gpucopy::<on,off,vebox,blitter>] Enable or disable GPU copy mode\n"));
+#else
     msdk_printf(MSDK_STRING("   [-gpucopy::<on,off>] Enable or disable GPU copy mode\n"));
+#endif
+
     msdk_printf(MSDK_STRING("   [-robust:soft]            - GPU hang recovery by inserting an IDR frame\n"));
     msdk_printf(MSDK_STRING("   [-timeout]                - timeout in seconds\n"));
 #if MFX_VERSION >= 1022
@@ -474,6 +479,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->gpuCopy = MFX_GPUCOPY_OFF;
         }
+#if defined(LIBVA_SUPPORT)
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpucopy::vebox")))
+        {
+            pParams->gpuCopy = MFX_GPUCOPY_VEBOX_ON;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpucopy::blitter")))
+        {
+            pParams->gpuCopy = MFX_GPUCOPY_BLT_ON;
+        }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-robust:soft")))
         {
             pParams->bSoftRobustFlag = true;

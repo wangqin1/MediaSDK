@@ -24,6 +24,8 @@
 
 #include "mfx_common_int.h"
 
+#define VACOPY_MIN_WIDTH  64
+#define VACOPY_MIN_HEIGHT 64
 #define ALIGN(value, alignment) (alignment) * ( (value) / (alignment) + (((value) % (alignment)) ? 1 : 0))
 
 mfxStatus va_to_mfx_status(VAStatus va_res)
@@ -66,11 +68,8 @@ mfxStatus va_to_mfx_status(VAStatus va_res)
 }
 
 VaCopyWrapper::VaCopyWrapper()
-    : m_guard()
+    : m_dpy(nullptr), m_sysSurfaceID(VA_INVALID_SURFACE), m_vaCopyMode(0), m_guard()
 {
-    m_dpy = nullptr;
-
-    m_sysSurfaceID = VA_INVALID_SURFACE;
     memset(&m_sysSurfaceInfo, 0, sizeof(m_sysSurfaceInfo));
 
     m_sysSurfaces.clear();
@@ -121,7 +120,7 @@ mfxStatus VaCopyWrapper::Release(void)
     return MFX_ERR_NONE;
 } // mfxStatus VaCopyWrapper::Release(void)
 
-bool VaCopyWrapper::CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+bool VaCopyWrapper::CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, mfxSize roi)
 {
     mfxU8* srcPtr = GetFramePointer(pSrc->Info.FourCC, pSrc->Data);
     mfxU8* dstPtr = GetFramePointer(pDst->Info.FourCC, pDst->Data);
@@ -131,6 +130,8 @@ bool VaCopyWrapper::CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
         if ((IsVaCopyFormatSupported(ConvertMfxFourccToVAFormat(pSrc->Info.FourCC))) &&
             (pSrc->Info.CropX == 0) &&
             (pSrc->Info.CropY == 0) &&
+            (roi.width >= VACOPY_MIN_WIDTH) &&
+            (roi.height >= VACOPY_MIN_HEIGHT) &&
             ((reinterpret_cast<size_t>(srcPtr) & 0xfff) == 0))
         {
             return true;
@@ -141,6 +142,8 @@ bool VaCopyWrapper::CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
         if ((IsVaCopyFormatSupported(ConvertMfxFourccToVAFormat(pDst->Info.FourCC))) &&
             (pDst->Info.CropX == 0) &&
             (pDst->Info.CropY == 0) &&
+            (roi.width >= VACOPY_MIN_WIDTH) &&
+            (roi.height >= VACOPY_MIN_HEIGHT) &&
             ((reinterpret_cast<mfxU64>(dstPtr) & 0xfff) == 0))
         {
             return true;
@@ -148,6 +151,18 @@ bool VaCopyWrapper::CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
     }
 
     return false;
+}
+
+void VaCopyWrapper::SetVaCopyMode(mfxU16 mode)
+{
+    if (mode == MFX_GPUCOPY_BLT_ON)
+    {
+        m_vaCopyMode = MFX_COPY_METHOD_BLT;
+    }
+    else
+    {
+        m_vaCopyMode = MFX_COPY_METHOD_VEBOX;
+    }
 }
 
 mfxStatus VaCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
@@ -472,10 +487,8 @@ mfxStatus VaCopyWrapper::VACopy(VASurfaceID srcSurface, VASurfaceID dstSurface)
     dst_obj.obj_type = VACopyObjectSurface;
     dst_obj.object.surface_id = dstSurface;
 
-    // set the sync mode to block
     option.bits.va_copy_sync = VA_EXEC_SYNC;
-    // set the copy mode: 0 -DEFAULT, 1 - POWER_SAVING, 2 -PERFORMANCE
-    option.bits.va_copy_mode = 0;
+    option.bits.va_copy_mode = m_vaCopyMode;
 
     va_sts = vaCopy(m_dpy, &dst_obj, &src_obj, option);
     mfx_sts = va_to_mfx_status(va_sts);

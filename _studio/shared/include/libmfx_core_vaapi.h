@@ -110,8 +110,12 @@ public:
         VAAPIAdapter(VAAPIVideoCORE *pVAAPICore):m_pVAAPICore(pVAAPICore)
         {
         };
-
- protected:
+        virtual mfxStatus SetVaCopyStatus(bool enable, mfxU16 mode) override
+        {
+            m_pVAAPICore->SetVaCopy(enable, mode);
+            return MFX_ERR_NONE;
+        };
+    protected:
         VAAPIVideoCORE *m_pVAAPICore;
 
     };
@@ -178,6 +182,7 @@ public:
 
     // this function should not be virtual
     void SetCmCopy(bool enable);
+    void SetVaCopy(bool enable, mfxU16 mode);
 
     bool CmCopy() const { return m_bCmCopy; }
 
@@ -211,6 +216,7 @@ protected:
     std::unique_ptr<CmCopyWrapper>              m_pCmCopy;
 
     bool                                        m_bVaCopy;
+    bool                                        m_bVaCopyAllowed;
     std::unique_ptr<VaCopyWrapper>              m_pVaCopy;
 #if defined (MFX_ENABLE_VPP)
     VPPHWResMng                                 m_vpp_hw_resmng;

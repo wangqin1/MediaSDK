@@ -1770,10 +1770,6 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     m_strDevicePath = pParams->strDevicePath;
 #endif
 
-#if defined(LIBVA_DRM_SUPPORT)
-    m_nVACopy = pParams->nVACopy;
-#endif
-
     mfxInitParamlWrap initPar;
 
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
@@ -1948,6 +1944,13 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     m_nPerfOpt = pParams->nPerfOpt;
 
     m_bSoftRobustFlag = pParams->bSoftRobustFlag;
+
+#if defined(LIBVA_DRM_SUPPORT)
+    if (pParams->memType == SYSTEM_MEMORY)
+        m_nVACopy = (pParams->gpuCopy == MFX_GPUCOPY_VEBOX_ON) || (pParams->gpuCopy == MFX_GPUCOPY_BLT_ON) ? 0 : -1;
+    else
+        m_nVACopy = pParams->nVACopy;
+#endif
 
     // create and init frame allocator
     sts = CreateAllocator();

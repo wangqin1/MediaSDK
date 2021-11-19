@@ -1815,14 +1815,6 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->numRepeat);
             }
-#if defined(LIBVA_DRM_SUPPORT)
-            else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-vacopy")) )
-            {
-                VAL_CHECK(1 + i == nArgNum);
-                i++;
-                msdk_sscanf(strInput[i], MSDK_STRING("%u"), &pParams->vaCopy);
-            }
-#endif
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pts_check")) )
             {
                 pParams->ptsCheck = true;

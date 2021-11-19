@@ -736,7 +736,7 @@ mfxStatus InitMemoryAllocator(
             SysMemAllocatorParams *psysMemAllocParams = new SysMemAllocatorParams;
             MSDK_CHECK_POINTER(psysMemAllocParams, MFX_ERR_MEMORY_ALLOC);
 
-            if (pInParams->vaCopy != -1)
+            if ((pInParams->GPUCopyValue == MFX_GPUCOPY_VEBOX_ON) || (pInParams->GPUCopyValue == MFX_GPUCOPY_BLT_ON))
             {
                 psysMemAllocParams->m_nAlignSize = 4096;
             }

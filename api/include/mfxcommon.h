@@ -119,9 +119,11 @@ typedef struct _mfxSyncPoint *mfxSyncPoint;
 
 /* GPUCopy */
 enum {
-    MFX_GPUCOPY_DEFAULT = 0,
-    MFX_GPUCOPY_ON      = 1,
-    MFX_GPUCOPY_OFF     = 2
+    MFX_GPUCOPY_DEFAULT  = 0,
+    MFX_GPUCOPY_ON       = 1,
+    MFX_GPUCOPY_OFF      = 2,
+    MFX_GPUCOPY_VEBOX_ON = 3,
+    MFX_GPUCOPY_BLT_ON   = 4
 };
 
 MFX_PACK_BEGIN_STRUCT_W_PTR()
