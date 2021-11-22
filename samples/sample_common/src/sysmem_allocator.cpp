@@ -405,6 +405,8 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
     if(!nbytes)
         return MFX_ERR_UNSUPPORTED;
 
+    nbytes += m_nAlignSize;
+
     std::unique_ptr<mfxMemId[]> mids(new mfxMemId[request->NumFrameSuggested]);
 
     // allocate frames

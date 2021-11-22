@@ -1888,6 +1888,16 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
         }
     }
 
+    if ((pParams->ImpLib & MFX_IMPL_HARDWARE) && !(pParams->ImpLib & MFX_IMPL_VIA_D3D11) &&
+       (pParams->IOPattern != (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY)))
+    {
+        pParams->ImpLib = MFX_IMPL_HARDWARE |
+        #ifdef LIBVA_SUPPORT
+                MFX_IMPL_VIA_VAAPI;
+        #else
+                MFX_IMPL_VIA_D3D9;
+        #endif
+    }
     
     std::vector<sOwnFrameInfo>::iterator it = pParams->frameInfoIn.begin();
     while(it != pParams->frameInfoIn.end())
