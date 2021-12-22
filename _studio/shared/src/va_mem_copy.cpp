@@ -265,6 +265,12 @@ VAStatus VaCopyWrapper::CreateUserVaSurface(
         ext_buffer.num_planes = 2;
         break;
 
+    case VA_FOURCC_YUY2:
+        ext_buffer.pitches[0] = ALIGN(surfaceInfo.pitch, 32);
+        size = ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32);// frame size align with pitch.
+        ext_buffer.num_planes = 1;
+        break;
+
     default:
         return VA_STATUS_ERROR_UNSUPPORTED_RT_FORMAT;
     }
@@ -303,6 +309,7 @@ bool VaCopyWrapper::IsVaCopyFormatSupported(mfxU32 fourCC)
     case VA_FOURCC_NV12:
     case VA_FOURCC_AYUV:
     case VA_FOURCC_P010:
+    case VA_FOURCC_YUY2:
         return true;
     default:
         return false;
@@ -455,6 +462,11 @@ mfxStatus VaCopyWrapper::AcquireUserVaSurface(mfxFrameSurface1 *pSurface)
         case MFX_FOURCC_P010:
             m_sysSurfaceInfo.fourCC = VA_FOURCC_P010;
             m_sysSurfaceInfo.format = VA_RT_FORMAT_YUV420_10;
+            break;
+
+        case MFX_FOURCC_YUY2:
+            m_sysSurfaceInfo.fourCC = VA_FOURCC_YUY2;
+            m_sysSurfaceInfo.format = VA_RT_FORMAT_YUV422;
             break;
 
         default:
