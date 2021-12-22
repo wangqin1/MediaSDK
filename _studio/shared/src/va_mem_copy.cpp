@@ -256,7 +256,7 @@ VAStatus VaCopyWrapper::CreateUserVaSurface(
         break;
 
     case VA_FOURCC_P010:
-        ext_buffer.pitches[0] = ALIGN(surfaceInfo.pitch, 32);
+        ext_buffer.pitches[0] = ALIGN(surfaceInfo.pitch, 64);
         ext_buffer.pitches[1] = ext_buffer.pitches[0];
         size = ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32) * 3 / 2;// frame size align with pitch.
         ext_buffer.offsets[0] = 0;// Y channel

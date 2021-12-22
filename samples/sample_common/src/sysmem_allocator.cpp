@@ -21,6 +21,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_utils.h"
 
 #define MSDK_ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
+#define MSDK_ALIGN64(X) (((mfxU32)((X)+63)) & (~ (mfxU32)63))
 #define ID_BUFFER MFX_MAKEFOURCC('B','U','F','F')
 #define ID_FRAME  MFX_MAKEFOURCC('F','R','M','E')
 
@@ -181,7 +182,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->U = ptr->Y + Width2 * Height2 * 2;
         ptr->V = ptr->U + 2;
         ptr->PitchHigh = 0;
-        ptr->PitchLow = (mfxU16)MSDK_ALIGN32(fs->info.Width * 2);
+        ptr->PitchLow = (mfxU16)MSDK_ALIGN64(fs->info.Width * 2);
         break;
     case MFX_FOURCC_P210:
         ptr->U = ptr->Y + Width2 * Height2 * 2;
