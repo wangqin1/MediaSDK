@@ -240,26 +240,28 @@ VAStatus VaCopyWrapper::CreateUserVaSurface(
     switch (surfaceInfo.fourCC)
     {
     case VA_FOURCC_NV12:
-        ext_buffer.pitches[0] = ALIGN(surfaceInfo.width, 128);
-        size = (ext_buffer.pitches[0] * surfaceInfo.height) * 3 / 2;// frame size align with pitch.
-        ext_buffer.offsets[0] = 0;// Y channel
-        ext_buffer.offsets[1] = ext_buffer.pitches[0] * surfaceInfo.height; // UV channel.
+        ext_buffer.pitches[0] = ALIGN(surfaceInfo.pitch, 32);
         ext_buffer.pitches[1] = ext_buffer.pitches[0];
+        size = (ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32)) * 3 / 2;// frame size align with pitch.
+        ext_buffer.offsets[0] = 0;// Y channel
+        ext_buffer.offsets[1] = ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32); // UV channel.
+        ext_buffer.offsets[2] = ext_buffer.offsets[1] + 1;
         ext_buffer.num_planes = 2;
         break;
 
     case VA_FOURCC_AYUV:
-        ext_buffer.pitches[0] = ALIGN(surfaceInfo.width, 128) * 4;
-        size = (ext_buffer.pitches[0] * surfaceInfo.height);// frame size align with pitch.
+        ext_buffer.pitches[0] = ALIGN(surfaceInfo.pitch, 32);
+        size = ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 16);// frame size align with pitch.
         ext_buffer.num_planes = 1;
         break;
 
     case VA_FOURCC_P010:
-        ext_buffer.pitches[0] = ALIGN(surfaceInfo.width, 32) * 2;
-        size = (ALIGN(surfaceInfo.width, 32) * ALIGN(surfaceInfo.height, 32)) * 3;// frame size align with pitch.
+        ext_buffer.pitches[0] = ALIGN(surfaceInfo.pitch, 32);
+        ext_buffer.pitches[1] = ext_buffer.pitches[0];
+        size = ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32) * 3 / 2;// frame size align with pitch.
         ext_buffer.offsets[0] = 0;// Y channel
         ext_buffer.offsets[1] = ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32); // UV channel.
-        ext_buffer.pitches[1] = ext_buffer.pitches[0];
+        ext_buffer.offsets[2] = ext_buffer.offsets[1] + 2;
         ext_buffer.num_planes = 2;
         break;
 
@@ -434,6 +436,7 @@ mfxStatus VaCopyWrapper::AcquireUserVaSurface(mfxFrameSurface1 *pSurface)
 
         m_sysSurfaceInfo.width = pSurface->Info.Width;
         m_sysSurfaceInfo.height = pSurface->Info.Height;
+        m_sysSurfaceInfo.pitch = pSurface->Data.Pitch;
         m_sysSurfaceInfo.memtype = VA_SURFACE_ATTRIB_MEM_TYPE_USER_PTR;
         m_sysSurfaceInfo.pBufBase = GetFramePointer(pSurface->Info.FourCC, pSurface->Data);
 
@@ -441,7 +444,7 @@ mfxStatus VaCopyWrapper::AcquireUserVaSurface(mfxFrameSurface1 *pSurface)
         {
         case MFX_FOURCC_NV12:
             m_sysSurfaceInfo.fourCC = VA_FOURCC_NV12;
-            m_sysSurfaceInfo.format = VA_FOURCC_NV12;
+            m_sysSurfaceInfo.format = VA_RT_FORMAT_YUV420;
             break;
 
         case MFX_FOURCC_AYUV:
@@ -451,7 +454,7 @@ mfxStatus VaCopyWrapper::AcquireUserVaSurface(mfxFrameSurface1 *pSurface)
 
         case MFX_FOURCC_P010:
             m_sysSurfaceInfo.fourCC = VA_FOURCC_P010;
-            m_sysSurfaceInfo.format = VA_FOURCC_P010;
+            m_sysSurfaceInfo.format = VA_RT_FORMAT_YUV420_10;
             break;
 
         default:

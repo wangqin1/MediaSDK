@@ -31,8 +31,9 @@
 
 typedef struct
 {
-    mfxU32    width;
-    mfxU32    height;
+    mfxU16    width;
+    mfxU16    height;
+    mfxU16    pitch;
     mfxU32    fourCC;
     mfxU32    format;
     mfxU32    memtype;
