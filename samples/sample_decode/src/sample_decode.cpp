@@ -329,8 +329,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
             if (pParams->nVACopy < 0 || pParams->nVACopy > 2)
             {
-                msdk_printf(MSDK_STRING("error: wrong '-vacopy' parameter. 0(Balanced) will be used.\n"));
+                msdk_printf(MSDK_STRING("Error: wrong '-vacopy' parameter. 0(Balanced) will be used\n"));
                 pParams->nVACopy = 0;
+            }
+            if (D3D9_MEMORY != pParams->memType)
+            {
+                msdk_printf(MSDK_STRING("Warning: '-vacopy' only works in vaapi mode\n"));
+                pParams->memType = D3D9_MEMORY;
             }
         }
 #endif
@@ -775,6 +780,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         pParams->nAsyncDepth = 4; //set by default;
     }
+
+#if defined(LIBVA_SUPPORT)
+    if (((pParams->gpuCopy == MFX_GPUCOPY_VEBOX_ON) || (pParams->gpuCopy == MFX_GPUCOPY_BLT_ON)) && (pParams->memType != SYSTEM_MEMORY))
+    {
+        msdk_printf(MSDK_STRING("Warning: '-gpucopy::<vebox,blitter>' only works in none-vaapi mode\n"));
+        pParams->memType = SYSTEM_MEMORY;
+    }
+#endif
 
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
     if (pParams->bPrefferdGfx && pParams->bPrefferiGfx)
