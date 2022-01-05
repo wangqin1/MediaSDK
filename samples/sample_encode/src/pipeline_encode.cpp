@@ -1905,9 +1905,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         }
         else
         {
-            pParams->shouldUseShifted10BitVPP = m_pmfxVPP && pParams->memType != SYSTEM_MEMORY;
+            pParams->shouldUseShifted10BitVPP = m_pmfxVPP && (pParams->memType != SYSTEM_MEMORY || (pParams->memType == SYSTEM_MEMORY && (pParams->gpuCopy == MFX_GPUCOPY_VEBOX_ON || pParams->gpuCopy == MFX_GPUCOPY_BLT_ON)));
 
-            pParams->shouldUseShifted10BitEnc = (pParams->memType != SYSTEM_MEMORY && pParams->CodecId == MFX_CODEC_HEVC) || pParams->CodecId == MFX_CODEC_VP9;
+            pParams->shouldUseShifted10BitEnc = (pParams->memType != SYSTEM_MEMORY || (pParams->memType == SYSTEM_MEMORY && (pParams->gpuCopy == MFX_GPUCOPY_VEBOX_ON || pParams->gpuCopy == MFX_GPUCOPY_BLT_ON))) && (pParams->CodecId == MFX_CODEC_HEVC || pParams->CodecId == MFX_CODEC_VP9);
             readerShift = m_pmfxVPP ? pParams->shouldUseShifted10BitVPP : pParams->shouldUseShifted10BitEnc;
         }
     }
