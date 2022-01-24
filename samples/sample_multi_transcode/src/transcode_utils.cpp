@@ -161,6 +161,9 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("            3, MFE operates as MANUAL mode\n"));
 
     msdk_printf(MSDK_STRING("  -mfe_timeout <N> multi-frame encode timeout in milliseconds - set per sessions control\n"));
+    msdk_printf(MSDK_STRING("  -mdcv <mdcv array> set mastering display colour volume for HDR SEI metadata.\n"));
+    msdk_printf(MSDK_STRING("            totally 10 values for mdcv parameter to set, separated by comma.\n"));
+    msdk_printf(MSDK_STRING("            for example: -mdcv 13250,7500,34000,34500,3000,16000,15635,16450,12000000,200\n"));
 #endif
 
 #ifdef ENABLE_MCTF
@@ -1306,6 +1309,33 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
     {
         InputParams.DecOutPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
+#if (MFX_VERSION >= 1025)
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-mdcv")))
+    {
+        InputParams.bEnableMDCV = true;
+        auto pInMDCV = &(InputParams.SEIMetaMDCV);
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        int j, k;
+        k = msdk_sscanf(argv[i + 1], MSDK_STRING("%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%u,%u"),\
+                        &(pInMDCV->DisplayPrimariesX[0]),\
+                        &(pInMDCV->DisplayPrimariesX[1]),\
+                        &(pInMDCV->DisplayPrimariesX[2]),\
+                        &(pInMDCV->DisplayPrimariesY[0]),\
+                        &(pInMDCV->DisplayPrimariesY[1]),\
+                        &(pInMDCV->DisplayPrimariesY[2]),\
+                        &(pInMDCV->WhitePointX),\
+                        &(pInMDCV->WhitePointY),\
+                        &(pInMDCV->MaxDisplayMasteringLuminance),\
+                        &(pInMDCV->MinDisplayMasteringLuminance)\
+                        );
+        if (k != 10)
+        {
+            PrintError(argv[0], MSDK_STRING("Invalid number of layers for MDCV"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+        i += 1;
+    }
+#endif
     else
     {
         // no matching argument was found

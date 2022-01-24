@@ -172,6 +172,17 @@ namespace TranscodingSample
         EXTBRC_IMPLICIT
     };
 
+#if (MFX_VERSION >= 1025)
+    typedef struct {
+        mfxU16 InsertPayloadToggle;
+        mfxU16 DisplayPrimariesX[3];
+        mfxU16 DisplayPrimariesY[3];
+        mfxU16 WhitePointX;
+        mfxU16 WhitePointY;
+        mfxU32 MaxDisplayMasteringLuminance;
+        mfxU32 MinDisplayMasteringLuminance;
+    } sSEIMetaMasteringDisplay;
+#endif
     struct __sInputParams
     {
         // session parameters
@@ -350,6 +361,9 @@ namespace TranscodingSample
         mfxU16 numMFEFrames;
         mfxU16 MFMode;
         mfxU32 mfeTimeout;
+
+        sSEIMetaMasteringDisplay SEIMetaMDCV;
+        bool bEnableMDCV;
 #endif
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
