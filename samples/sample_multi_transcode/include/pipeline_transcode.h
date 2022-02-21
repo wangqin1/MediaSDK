@@ -182,6 +182,12 @@ namespace TranscodingSample
         mfxU32 MaxDisplayMasteringLuminance;
         mfxU32 MinDisplayMasteringLuminance;
     } sSEIMetaMasteringDisplay;
+
+    typedef struct {
+        mfxU16 InsertPayloadToggle;
+        mfxU16 MaxContentLightLevel;
+        mfxU16 MaxPicAverageLightLevel;
+    } sSEIMetaContentLightLevel;
 #endif
     struct __sInputParams
     {
@@ -363,7 +369,9 @@ namespace TranscodingSample
         mfxU32 mfeTimeout;
 
         sSEIMetaMasteringDisplay SEIMetaMDCV;
+        sSEIMetaContentLightLevel SEIMetaCLLI;
         bool bEnableMDCV;
+        bool bEnableCLLI;
 #endif
 
 #if defined(LIBVA_WAYLAND_SUPPORT)

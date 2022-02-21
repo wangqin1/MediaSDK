@@ -2731,6 +2731,18 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         mdcv->MaxDisplayMasteringLuminance = pInMDCV->MaxDisplayMasteringLuminance;
         mdcv->MinDisplayMasteringLuminance = pInMDCV->MinDisplayMasteringLuminance;
     }
+
+    if (pInParams->bEnableCLLI)
+    {
+        auto clli = m_mfxEncParams.AddExtBuffer<mfxExtContentLightLevelInfo>();
+        auto pInCLLI = &(pInParams->SEIMetaCLLI);
+        clli->Header.BufferId = MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO;
+        clli->Header.BufferSz = sizeof(mfxExtContentLightLevelInfo);
+        clli->InsertPayloadToggle = MFX_PAYLOAD_IDR;
+        clli->MaxContentLightLevel = pInCLLI->MaxContentLightLevel;
+        clli->MaxPicAverageLightLevel = pInCLLI->MaxPicAverageLightLevel;
+    }
+
 #endif
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
