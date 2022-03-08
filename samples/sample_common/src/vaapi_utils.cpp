@@ -521,6 +521,18 @@ VAStatus CLibVA::AcquireUserSurface(
         ext_buffer.num_planes = 1;
         break;
 
+    case VA_FOURCC_UYVY:
+    case VA_FOURCC_YUY2:
+        ext_buffer.pitches[0] = ((surf_info.width + pitch_align -1) /
+                                  pitch_align) *
+                                  pitch_align * 2;
+        size = (ext_buffer.pitches[0] * surf_info.height);// frame size align with pitch.
+        size = (size+base_addr_align-1) /
+                base_addr_align *
+                base_addr_align;// frame size align as 4K page.
+        ext_buffer.num_planes = 1;
+        break;
+
     default:
         return VA_STATUS_ERROR_UNSUPPORTED_RT_FORMAT;
     }
