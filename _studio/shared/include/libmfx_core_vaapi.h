@@ -217,6 +217,7 @@ protected:
 
     bool                                        m_bVaCopy;
     bool                                        m_bVaCopyAllowed;
+    mfxU16                                      m_vaCopyMode;
     std::unique_ptr<VaCopyWrapper>              m_pVaCopy;
 #if defined (MFX_ENABLE_VPP)
     VPPHWResMng                                 m_vpp_hw_resmng;

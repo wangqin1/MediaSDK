@@ -66,22 +66,17 @@ public:
 
     static bool CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, mfxSize roi);
 
-    mfxStatus CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
-    mfxStatus CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc);
-
-    void SetVaCopyMode(mfxU16 mode);
+    mfxStatus CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, mfxU16 vaCopyMode);
+    mfxStatus CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, mfxU16 vaCopyMode);
 
 protected:
 
     VADisplay m_dpy;
 
     VASurfaceID m_sysSurfaceID;
-    mfxSurfaceInfo m_sysSurfaceInfo;
 
-    std::map<VASurfaceID, mfxSurfaceInfo> m_sysSurfaces;
+    std::map<mfxU8 *, VASurfaceID> m_tableSysRelations;
 
-    mfxU32 m_vaCopyMode;
- 
     UMC::Mutex m_guard;
 
     static bool IsVaCopyFormatSupported(mfxU32 fourCC);
@@ -93,7 +88,7 @@ protected:
 
     VAStatus ReleaseUserVaSurface(VASurfaceID *pSurface);
 
-    mfxStatus VACopy(VASurfaceID srcSurface, VASurfaceID dstSurface);
+    mfxStatus VACopy(VASurfaceID srcSurface, VASurfaceID dstSurface, mfxU16 vaCopyMode);
 };
 
 #endif // __VA_MEM_COPY_H__

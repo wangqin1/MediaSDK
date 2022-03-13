@@ -68,11 +68,9 @@ mfxStatus va_to_mfx_status(VAStatus va_res)
 }
 
 VaCopyWrapper::VaCopyWrapper()
-    : m_dpy(nullptr), m_sysSurfaceID(VA_INVALID_SURFACE), m_vaCopyMode(0), m_guard()
+    : m_dpy(nullptr), m_sysSurfaceID(VA_INVALID_SURFACE), m_guard()
 {
-    memset(&m_sysSurfaceInfo, 0, sizeof(m_sysSurfaceInfo));
-
-    m_sysSurfaces.clear();
+    m_tableSysRelations.clear();
 } // VaCopyWrapper::VaCopyWrapper(void)
 
 VaCopyWrapper::~VaCopyWrapper(void)
@@ -107,15 +105,15 @@ mfxStatus VaCopyWrapper::Release(void)
     VAStatus va_sts = VA_STATUS_SUCCESS;
     mfxStatus mfx_sts = MFX_ERR_NONE;
 
-    for (std::map<VASurfaceID, mfxSurfaceInfo>::iterator it = m_sysSurfaces.begin(); it != m_sysSurfaces.end(); ++it) {
-        if (VA_INVALID_SURFACE != (VASurfaceID)(it->first)) {
-            va_sts = ReleaseUserVaSurface((VASurfaceID *)(&(it->first)));
+    for (std::map<mfxU8 *, VASurfaceID>::iterator it = m_tableSysRelations.begin(); it != m_tableSysRelations.end(); ++it) {
+        if (VA_INVALID_SURFACE != (VASurfaceID)(it->second)) {
+            va_sts = ReleaseUserVaSurface((VASurfaceID *)(&(it->second)));
             mfx_sts = va_to_mfx_status(va_sts);
             MFX_CHECK_STS(mfx_sts);
         }
     }
 
-    m_sysSurfaces.clear();
+    m_tableSysRelations.clear();
 
     return MFX_ERR_NONE;
 } // mfxStatus VaCopyWrapper::Release(void)
@@ -153,19 +151,7 @@ bool VaCopyWrapper::CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc,
     return false;
 }
 
-void VaCopyWrapper::SetVaCopyMode(mfxU16 mode)
-{
-    if (mode == MFX_GPUCOPY_BLT_ON)
-    {
-        m_vaCopyMode = MFX_COPY_METHOD_BLT;
-    }
-    else
-    {
-        m_vaCopyMode = MFX_COPY_METHOD_VEBOX;
-    }
-}
-
-mfxStatus VaCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+mfxStatus VaCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, mfxU16 vaCopyMode)
 {
     mfxStatus mfx_sts = MFX_ERR_NONE;
 
@@ -178,7 +164,7 @@ mfxStatus VaCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1
         mfx_sts = AcquireUserVaSurface(pDst);
         MFX_CHECK_STS(mfx_sts);
 
-        mfx_sts = VACopy(*va_surface_id, m_sysSurfaceID);
+        mfx_sts = VACopy(*va_surface_id, m_sysSurfaceID, vaCopyMode);
         MFX_CHECK_STS(mfx_sts);
 
         return mfx_sts;
@@ -187,7 +173,7 @@ mfxStatus VaCopyWrapper::CopyVideoToSys(mfxFrameSurface1 *pDst, mfxFrameSurface1
     return MFX_ERR_UNDEFINED_BEHAVIOR;
 }
 
-mfxStatus VaCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
+mfxStatus VaCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, mfxU16 vaCopyMode)
 {
 
     mfxStatus mfx_sts = MFX_ERR_NONE;
@@ -201,7 +187,7 @@ mfxStatus VaCopyWrapper::CopySysToVideo(mfxFrameSurface1 *pDst, mfxFrameSurface1
         mfx_sts = AcquireUserVaSurface(pSrc);
         MFX_CHECK_STS(mfx_sts);
 
-        mfx_sts = VACopy(m_sysSurfaceID, *va_surface_id);
+        mfx_sts = VACopy(m_sysSurfaceID, *va_surface_id, vaCopyMode);
         MFX_CHECK_STS(mfx_sts);
 
         return mfx_sts;    
@@ -266,6 +252,7 @@ VAStatus VaCopyWrapper::CreateUserVaSurface(
         break;
 
     case VA_FOURCC_YUY2:
+    case VA_FOURCC_UYVY:
         ext_buffer.pitches[0] = ALIGN(surfaceInfo.pitch, 32);
         size = ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32);// frame size align with pitch.
         ext_buffer.num_planes = 1;
@@ -293,12 +280,6 @@ VAStatus VaCopyWrapper::CreateUserVaSurface(
                               surface_attrib,
                               3);
 
-    if (VA_STATUS_SUCCESS != va_sts) {
-        free(surfaceInfo.pBufBase);
-        surfaceInfo.pBufBase = NULL;
-        return va_sts;
-    }
-
     return va_sts;
 }
 
@@ -310,6 +291,7 @@ bool VaCopyWrapper::IsVaCopyFormatSupported(mfxU32 fourCC)
     case VA_FOURCC_AYUV:
     case VA_FOURCC_P010:
     case VA_FOURCC_YUY2:
+    case VA_FOURCC_UYVY:
         return true;
     default:
         return false;
@@ -421,69 +403,66 @@ mfxStatus VaCopyWrapper::AcquireUserVaSurface(mfxFrameSurface1 *pSurface)
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    std::map<VASurfaceID, mfxSurfaceInfo>::iterator it;
-    for (it = m_sysSurfaces.begin(); it != m_sysSurfaces.end(); ++it)
-    {
-        if ((it->first != VA_INVALID_SURFACE) &&
-            (it->second.pBufBase == GetFramePointer(pSurface->Info.FourCC, pSurface->Data)) &&
-            (it->second.width == pSurface->Info.Width) &&
-            (it->second.height == pSurface->Info.Height) &&
-            (IsVaCopyFormatSupported(it->second.fourCC)) &&
-            (ConvertVAFormatToMfxFourcc(it->second.fourCC) == pSurface->Info.FourCC))
-        {
-            m_sysSurfaceID = it->first;
-            m_sysSurfaceInfo = it->second;
-            break;
-        }
-    }
+    std::map<mfxU8 *, VASurfaceID>::iterator it;
+    it = m_tableSysRelations.find(GetFramePointer(pSurface->Info.FourCC, pSurface->Data));
 
-    if (it == m_sysSurfaces.end())
+    if (it == m_tableSysRelations.end())
     {
-        memset(&m_sysSurfaceInfo, 0, sizeof(m_sysSurfaceInfo));
+        mfxSurfaceInfo surfaceInfo;
+        memset(&surfaceInfo, 0, sizeof(surfaceInfo));
 
-        m_sysSurfaceInfo.width = pSurface->Info.Width;
-        m_sysSurfaceInfo.height = pSurface->Info.Height;
-        m_sysSurfaceInfo.pitch = pSurface->Data.Pitch;
-        m_sysSurfaceInfo.memtype = VA_SURFACE_ATTRIB_MEM_TYPE_USER_PTR;
-        m_sysSurfaceInfo.pBufBase = GetFramePointer(pSurface->Info.FourCC, pSurface->Data);
+        surfaceInfo.width = pSurface->Info.Width;
+        surfaceInfo.height = pSurface->Info.Height;
+        surfaceInfo.pitch = pSurface->Data.Pitch;
+        surfaceInfo.memtype = VA_SURFACE_ATTRIB_MEM_TYPE_USER_PTR;
+        surfaceInfo.pBufBase = GetFramePointer(pSurface->Info.FourCC, pSurface->Data);
 
         switch (pSurface->Info.FourCC)
         {
         case MFX_FOURCC_NV12:
-            m_sysSurfaceInfo.fourCC = VA_FOURCC_NV12;
-            m_sysSurfaceInfo.format = VA_RT_FORMAT_YUV420;
+            surfaceInfo.fourCC = VA_FOURCC_NV12;
+            surfaceInfo.format = VA_RT_FORMAT_YUV420;
             break;
 
         case MFX_FOURCC_AYUV:
-            m_sysSurfaceInfo.fourCC = VA_FOURCC_AYUV;
-            m_sysSurfaceInfo.format = VA_FOURCC_AYUV;
+            surfaceInfo.fourCC = VA_FOURCC_AYUV;
+            surfaceInfo.format = VA_FOURCC_AYUV;
             break;
 
         case MFX_FOURCC_P010:
-            m_sysSurfaceInfo.fourCC = VA_FOURCC_P010;
-            m_sysSurfaceInfo.format = VA_RT_FORMAT_YUV420_10;
+            surfaceInfo.fourCC = VA_FOURCC_P010;
+            surfaceInfo.format = VA_RT_FORMAT_YUV420_10;
             break;
 
         case MFX_FOURCC_YUY2:
-            m_sysSurfaceInfo.fourCC = VA_FOURCC_YUY2;
-            m_sysSurfaceInfo.format = VA_RT_FORMAT_YUV422;
+            surfaceInfo.fourCC = VA_FOURCC_YUY2;
+            surfaceInfo.format = VA_RT_FORMAT_YUV422;
+            break;
+
+        case MFX_FOURCC_UYVY:
+            surfaceInfo.fourCC = VA_FOURCC_UYVY;
+            surfaceInfo.format = VA_RT_FORMAT_YUV422;
             break;
 
         default:
             return MFX_ERR_UNSUPPORTED;
         }
         
-        va_sts = CreateUserVaSurface(&m_sysSurfaceID, m_sysSurfaceInfo);
-	mfx_sts = va_to_mfx_status(va_sts);
+        va_sts = CreateUserVaSurface(&m_sysSurfaceID, surfaceInfo);
+        mfx_sts = va_to_mfx_status(va_sts);
         MFX_CHECK_STS(mfx_sts);
 
-        m_sysSurfaces.insert(std::pair<VASurfaceID, mfxSurfaceInfo>(m_sysSurfaceID, m_sysSurfaceInfo));
+        m_tableSysRelations.insert(std::pair<mfxU8 *, VASurfaceID>(surfaceInfo.pBufBase, m_sysSurfaceID));
+    }
+    else
+    {
+        m_sysSurfaceID = it->second; 
     }
 
     return mfx_sts;
 }
 
-mfxStatus VaCopyWrapper::VACopy(VASurfaceID srcSurface, VASurfaceID dstSurface)
+mfxStatus VaCopyWrapper::VACopy(VASurfaceID srcSurface, VASurfaceID dstSurface, mfxU16 vaCopyMode)
 {
     VAStatus va_sts = VA_STATUS_SUCCESS;
     mfxStatus mfx_sts = MFX_ERR_NONE;
@@ -503,9 +482,13 @@ mfxStatus VaCopyWrapper::VACopy(VASurfaceID srcSurface, VASurfaceID dstSurface)
     dst_obj.object.surface_id = dstSurface;
 
     option.bits.va_copy_sync = VA_EXEC_SYNC;
-    option.bits.va_copy_mode = m_vaCopyMode;
+    option.bits.va_copy_mode = vaCopyMode;
 
     va_sts = vaCopy(m_dpy, &dst_obj, &src_obj, option);
+    mfx_sts = va_to_mfx_status(va_sts);
+    MFX_CHECK_STS(mfx_sts);
+
+    va_sts = vaSyncSurface(m_dpy, dstSurface);
     mfx_sts = va_to_mfx_status(va_sts);
     MFX_CHECK_STS(mfx_sts);
 

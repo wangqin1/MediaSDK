@@ -466,6 +466,7 @@ VAAPIVideoCORE::VAAPIVideoCORE(
 #endif
           , m_bVaCopy(false)
           , m_bVaCopyAllowed(false)
+          , m_vaCopyMode(0)
           , m_bHEVCFEIEnabled(false)
           , m_maxContextPriority(0)
 {
@@ -873,12 +874,24 @@ void
 VAAPIVideoCORE::SetVaCopy(bool enable, mfxU16 mode)
 {
     m_bVaCopyAllowed = enable;
-    if (enable)
+    if (!enable)
     {
         if (m_pVaCopy)
         {
-            m_pVaCopy->SetVaCopyMode(mode);
+            m_pCmCopy->Release();
         }
+        m_bVaCopy = false;
+    }
+    else
+    {
+       if (mode == MFX_GPUCOPY_BLT_ON)
+       {
+           m_vaCopyMode = MFX_COPY_METHOD_BLT;
+       }
+       else
+       {
+           m_vaCopyMode = MFX_COPY_METHOD_VEBOX;
+       } 
     }
 } // mfxStatus VAAPIVideoCORE::SetVaCopyStatus(...)
 
@@ -1229,7 +1242,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
             }
             else if (canUseVACopy)
             {
-                sts = m_pVaCopy->CopyVideoToSys(pDst, pSrc);
+                sts = m_pVaCopy->CopyVideoToSys(pDst, pSrc, m_vaCopyMode);
                 MFX_CHECK_STS(sts);
             }
             else
@@ -1294,7 +1307,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
         }
         else if (canUseVACopy)
         {
-            sts = m_pVaCopy->CopySysToVideo(pDst, pSrc);
+            sts = m_pVaCopy->CopySysToVideo(pDst, pSrc, m_vaCopyMode);
             MFX_CHECK_STS(sts);
         }
         else

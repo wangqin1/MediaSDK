@@ -105,7 +105,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
     mfxU16 Width2 = (mfxU16)MSDK_ALIGN32(fs->info.Width);
     mfxU16 Height2 = (mfxU16)MSDK_ALIGN32(fs->info.Height);
-    ptr->B = ptr->Y = (mfxU8 *)(((size_t)((mfxU8 *)fs + MSDK_ALIGN32(sizeof(sFrame)) + m_nAlignSize)) &~(size_t) (m_nAlignSize - 1));
+    ptr->B = ptr->Y = (mfxU8 *)(((size_t)((mfxU8 *)fs + MSDK_ALIGN32(sizeof(sFrame)) + (m_nAlignSize - 1))) & (~(size_t) (m_nAlignSize - 1)));
 
     switch (fs->info.FourCC)
     {
