@@ -246,7 +246,7 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_STATUS(sts, "InitRotateParam failed");
 
     // create and init frame allocator
-    sts = CreateAllocator();
+    sts = CreateAllocator(pParams);
     MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
 
     sts = ResetMFXComponents(pParams);

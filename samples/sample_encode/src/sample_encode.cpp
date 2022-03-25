@@ -106,9 +106,10 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-path path] - path to plugin (valid only in pair with -p option)\n"));
     msdk_printf(MSDK_STRING("   [-async]                 - depth of asynchronous pipeline. default value is 4. must be between 1 and 20.\n"));
 #if defined(LIBVA_SUPPORT)
-    msdk_printf(MSDK_STRING("   [-gpucopy::<on,off,vebox,blitter>] Enable or disable GPU copy mode\n"));
+    msdk_printf(MSDK_STRING("   [-gpucopy::<on,off,vebox,blitter>] - Enable or disable GPU copy mode\n"));
+    msdk_printf(MSDK_STRING("   [-iopattern IN/OUT surface type] - IN/OUT surface type: sys_to_sys, sys_to_d3d, d3d_to_d3d    (def: sys_to_sys)\n"));
 #else
-    msdk_printf(MSDK_STRING("   [-gpucopy::<on,off>] Enable or disable GPU copy mode\n"));
+    msdk_printf(MSDK_STRING("   [-gpucopy::<on,off>] - Enable or disable GPU copy mode\n"));
 #endif
     msdk_printf(MSDK_STRING("   [-robust:soft]           - Recovery from GPU hang by inserting an IDR\n"));
     msdk_printf(MSDK_STRING("   [-vbr]                   - variable bitrate control\n"));
@@ -375,6 +376,25 @@ mfxStatus ParseAdditionalParams(msdk_char *strInput[], mfxU8 nArgNum, mfxU8& i, 
     return MFX_ERR_NONE;
 }
 
+static mfxU16 Str2IOpattern(msdk_char* strInput)
+{
+    mfxU16 IOPattern = 0;
+
+    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("d3d_to_d3d")) )
+    {
+        IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+    }
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("sys_to_d3d")) )
+    {
+        IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+    }
+    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("sys_to_sys")) )
+    {
+        IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+    }
+    return IOPattern;
+
+} // static mfxU16 Str2IOpattern(msdk_char* strInput)
 
 mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* pParams)
 {
@@ -407,6 +427,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #endif
 #ifdef LIBVA_DRM_SUPPORT
     pParams->nVACopy = -1; //default -1: vacopy disabled
+    pParams->nIOPattern = 0;
 #endif
 
     // parse command line parameters
@@ -764,6 +785,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 msdk_printf(MSDK_STRING("Warning: '-vacopy' only works in vaapi mode\n"));
                 pParams->memType = D3D9_MEMORY;
             }
+        }
+        else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-iopattern")) )
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            pParams->nIOPattern = Str2IOpattern(strInput[++i]);
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")))
@@ -1651,10 +1677,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
 #if defined(LIBVA_SUPPORT)
-    if (((pParams->gpuCopy == MFX_GPUCOPY_VEBOX_ON) || (pParams->gpuCopy == MFX_GPUCOPY_BLT_ON)) && (pParams->memType != SYSTEM_MEMORY))
+    if ((pParams->gpuCopy == MFX_GPUCOPY_VEBOX_ON) || (pParams->gpuCopy == MFX_GPUCOPY_BLT_ON))
     {
         msdk_printf(MSDK_STRING("Warning: '-gpucopy::<vebox,blitter>' only works in none-vaapi mode\n"));
         pParams->memType = SYSTEM_MEMORY;
+        if (pParams->nIOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+        {
+            pParams->memType = D3D9_MEMORY; 
+        }
     }
 #endif
 

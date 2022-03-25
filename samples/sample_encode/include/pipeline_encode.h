@@ -133,6 +133,7 @@ struct sInputParams
 #endif
 #if defined(LIBVA_DRM_SUPPORT)
     mfxI32 nVACopy;
+    mfxU16 nIOPattern;
 #endif
 #if (defined(_WIN64) || defined(_WIN32)) && (MFX_VERSION >= 1031)
     bool bPrefferdGfx;
@@ -465,7 +466,7 @@ protected:
     virtual mfxStatus AllocateExtMVCBuffers();
     virtual void DeallocateExtMVCBuffers();
 
-    virtual mfxStatus CreateAllocator();
+    virtual mfxStatus CreateAllocator(sInputParams *pParams);
     virtual void DeleteAllocator();
 
     virtual mfxStatus CreateHWDevice();

@@ -45,6 +45,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "version.h"
 
+#include "general_allocator.h"
 #include <algorithm>
 
 #ifndef MFX_VERSION
@@ -935,7 +936,14 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     // specify memory type
     if (D3D9_MEMORY == pInParams->memType || D3D11_MEMORY == pInParams->memType)
     {
-        m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+        if (pInParams->nIOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+        {
+            m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+        }
+        else
+        {
+            m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+        }
     }
     else
     {
@@ -1179,7 +1187,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
             MSDK_ZERO_MEMORY(m_pVppSurfaces[i]);
             MSDK_MEMCPY_VAR(m_pVppSurfaces[i].Info, &(m_mfxVppParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
-            if (m_bExternalAlloc)
+            if (m_bExternalAlloc && (m_mfxVppParams.IOPattern != (MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)))
             {
                 m_pVppSurfaces[i].Data.MemId = m_VppResponse.mids[i];
             }
@@ -1239,8 +1247,9 @@ mfxStatus CEncodingPipeline::AllocFrames()
     return MFX_ERR_NONE;
 }
 
-mfxStatus CEncodingPipeline::CreateAllocator()
+mfxStatus CEncodingPipeline::CreateAllocator(sInputParams *pInParams)
 {
+    MSDK_CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
     mfxStatus sts = MFX_ERR_NONE;
 
     if (D3D9_MEMORY == m_memType || D3D11_MEMORY == m_memType)
@@ -1315,7 +1324,18 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         MSDK_CHECK_STATUS(sts, "m_mfxSession.SetHandle failed");
 
         // create VAAPI allocator
-        m_pMFXAllocator = new vaapiFrameAllocator;
+        if (pInParams->nIOPattern == (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+        {
+            m_pMFXAllocator = new GeneralAllocator;
+            if ((pInParams->gpuCopy == MFX_GPUCOPY_VEBOX_ON) || (pInParams->gpuCopy == MFX_GPUCOPY_BLT_ON))
+            {
+                m_pMFXAllocator->m_nSYSAlignSize = 4096;
+            }
+        }
+        else
+        {
+            m_pMFXAllocator = new vaapiFrameAllocator; 
+        }
         MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
 
         vaapiAllocatorParams *p_vaapiAllocParams = new vaapiAllocatorParams;
@@ -1953,7 +1973,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 #endif
 
     // create and init frame allocator
-    sts = CreateAllocator();
+    sts = CreateAllocator(pParams);
     MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
 
     sts = InitMfxEncParams(pParams);

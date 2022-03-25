@@ -77,6 +77,12 @@ mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
         {
             sts = m_SYSAllocator.get()->Init(sysMemAllocParams);
         }
+        else if (m_nSYSAlignSize != 0)
+        {
+            SysMemAllocatorParams params;
+            params.m_nAlignSize = m_nSYSAlignSize;
+            sts = m_SYSAllocator.get()->Init(&params);
+        }
         else
         {
             sts = m_SYSAllocator.get()->Init(0);
