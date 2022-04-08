@@ -101,9 +101,10 @@ VAStatus VaCopyWrapper::ReleaseUserVaSurface(
 
 mfxStatus VaCopyWrapper::Release(void)
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
     VAStatus va_sts = VA_STATUS_SUCCESS;
     mfxStatus mfx_sts = MFX_ERR_NONE;
+
+    UMC::AutomaticUMCMutex guard(m_guard);
 
     for (std::map<mfxU8 *, VASurfaceID>::iterator it = m_tableSysRelations.begin(); it != m_tableSysRelations.end(); ++it) {
         if (VA_INVALID_SURFACE != (VASurfaceID)(it->second)) {
@@ -115,7 +116,7 @@ mfxStatus VaCopyWrapper::Release(void)
 
     m_tableSysRelations.clear();
 
-    return MFX_ERR_NONE;
+    return mfx_sts;
 } // mfxStatus VaCopyWrapper::Release(void)
 
 bool VaCopyWrapper::CanUseVaCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, mfxSize roi)
@@ -401,8 +402,6 @@ mfxStatus VaCopyWrapper::AcquireUserVaSurface(mfxFrameSurface1 *pSurface)
     mfxStatus mfx_sts = MFX_ERR_NONE;
     VAStatus va_sts = VA_STATUS_SUCCESS;
 
-    UMC::AutomaticUMCMutex guard(m_guard);
-
     std::map<mfxU8 *, VASurfaceID>::iterator it;
     it = m_tableSysRelations.find(GetFramePointer(pSurface->Info.FourCC, pSurface->Data));
 
@@ -447,7 +446,9 @@ mfxStatus VaCopyWrapper::AcquireUserVaSurface(mfxFrameSurface1 *pSurface)
         default:
             return MFX_ERR_UNSUPPORTED;
         }
-        
+
+        UMC::AutomaticUMCMutex guard(m_guard);
+ 
         va_sts = CreateUserVaSurface(&m_sysSurfaceID, surfaceInfo);
         mfx_sts = va_to_mfx_status(va_sts);
         MFX_CHECK_STS(mfx_sts);

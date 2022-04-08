@@ -878,7 +878,7 @@ VAAPIVideoCORE::SetVaCopy(bool enable, mfxU16 mode)
     {
         if (m_pVaCopy)
         {
-            m_pCmCopy->Release();
+            m_pVaCopy->Release();
         }
         m_bVaCopy = false;
     }
