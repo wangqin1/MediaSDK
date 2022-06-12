@@ -776,13 +776,17 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         pcSPS->log2_min_pcm_luma_coding_block_size = GetVLCElementU() + 3;
 
         if (pcSPS->log2_min_pcm_luma_coding_block_size < std::min(MinCbLog2SizeY, 5u) || pcSPS->log2_min_pcm_luma_coding_block_size > std::min(CtbLog2SizeY, 5u))
-            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
+	{
+		vm_string_printf(VM_STRING("\n [ERROR] SPS : Min PCM CB size ( %d ) is out of the range of CB size.\n"),pcSPS->log2_min_pcm_luma_coding_block_size);
+		throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+	}
         pcSPS->log2_max_pcm_luma_coding_block_size = GetVLCElementU() + pcSPS->log2_min_pcm_luma_coding_block_size;
 
         if (pcSPS->log2_max_pcm_luma_coding_block_size > std::min(CtbLog2SizeY, 5u))
-            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
+	{
+		vm_string_printf(VM_STRING("\n [ERROR] SPS : Max PCM CB size ( %d ) is out of the range of CB size.\n"),pcSPS->log2_max_pcm_luma_coding_block_size);
+	        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+	}
         pcSPS->pcm_loop_filter_disabled_flag = Get1Bit();
     }
 
