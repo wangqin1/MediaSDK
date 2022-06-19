@@ -3203,14 +3203,29 @@ mfxStatus CTranscodingPipeline::InitVppMfxParams(sInputParams *pInParams)
         auto inSignalInfo = m_mfxVppParams.AddExtBuffer<mfxExtVideoSignalInfo>();
         inSignalInfo->Header.BufferId		 = MFX_EXTBUFF_VIDEO_SIGNAL_INFO_IN;
         inSignalInfo->Header.BufferSz		 = sizeof(mfxExtVideoSignalInfo);
-        inSignalInfo->VideoFullRange 		 = 0; // Limited range P010
-        inSignalInfo->ColourPrimaries		 = 9; // BT.2020
-
+        if (pInParams->SignalInfoIn.Enabled)
+        {
+            inSignalInfo->VideoFullRange     = pInParams->SignalInfoIn.VideoFullRange;
+            inSignalInfo->ColourPrimaries    = pInParams->SignalInfoIn.ColourPrimaries;
+        }
+        else
+        {
+            inSignalInfo->VideoFullRange     = 0; // Limited range P010
+            inSignalInfo->ColourPrimaries    = 9; // BT.2020
+        }
         auto outSignalInfo = m_mfxVppParams.AddExtBuffer<mfxExtVideoSignalInfo>();
         outSignalInfo->Header.BufferId		 = MFX_EXTBUFF_VIDEO_SIGNAL_INFO_OUT;
-        outSignalInfo->Header.BufferSz		  = sizeof(mfxExtVideoSignalInfo);
-        outSignalInfo->VideoFullRange		  = 0; // Limited range NV12
-        outSignalInfo->ColourPrimaries		  = 1; // BT.709
+        outSignalInfo->Header.BufferSz		 = sizeof(mfxExtVideoSignalInfo);
+        if (pInParams->SignalInfoOut.Enabled)
+        {
+            outSignalInfo->VideoFullRange    = pInParams->SignalInfoOut.VideoFullRange;
+            outSignalInfo->ColourPrimaries   = pInParams->SignalInfoOut.ColourPrimaries;
+        }
+        else
+        {
+            outSignalInfo->VideoFullRange    = 0; // Limited range NV12
+            outSignalInfo->ColourPrimaries   = 1; // BT.709
+        }
     }
 
     if (pInParams->ScalingMode)

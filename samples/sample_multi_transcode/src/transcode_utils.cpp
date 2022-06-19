@@ -168,6 +168,12 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("            totally 2 values (MaxCLL, MaxPALL) to set, separated by comma.\n"));
     msdk_printf(MSDK_STRING("            for example: -HdrSEI:clli 1000,40\n"));
 
+    msdk_printf(MSDK_STRING("  -SignalInfoIn <signal_info array> set input video signal info.\n"));
+    msdk_printf(MSDK_STRING("            totally 2 values (VideoFullRange, ColourPrimaries) to set, separated by comma.\n"));
+    msdk_printf(MSDK_STRING("            for example: -SignalInfoIn 0,9\n"));
+    msdk_printf(MSDK_STRING("  -SignalInfoOut <signal_info array> set output video signal info.\n"));
+    msdk_printf(MSDK_STRING("            totally 2 values (VideoFullRange, ColourPrimaries) to set, separated by comma.\n"));
+    msdk_printf(MSDK_STRING("            for example: -SignalInfoOut 0,9\n"));
 #endif
 
 #ifdef ENABLE_MCTF
@@ -1352,6 +1358,40 @@ mfxStatus ParseAdditionalParams(msdk_char *argv[], mfxU32 argc, mfxU32& i, Trans
         if (k != 2)
         {
             PrintError(argv[0], MSDK_STRING("Invalid number of layers for CLLI"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+        i += 1;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-SignalInfoIn")))
+    {
+        auto pSignalInfoIn = &(InputParams.SignalInfoIn);
+        pSignalInfoIn->Enabled = true;
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        int k;
+        k = msdk_sscanf(argv[i+1], MSDK_STRING("%hu,%hu"),\
+                        &(pSignalInfoIn->VideoFullRange),\
+                        &(pSignalInfoIn->ColourPrimaries)
+                       );
+        if (k != 2)
+        {
+            PrintError(argv[0], MSDK_STRING("Invalid number of layers for SignalInfoIn"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+        i += 1;
+    }
+    else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-SignalInfoOut")))
+    {
+        auto pSignalInfoOut = &(InputParams.SignalInfoOut);
+        pSignalInfoOut->Enabled = true;
+        VAL_CHECK(i + 1 >= argc, i, argv[i]);
+        int k;
+        k = msdk_sscanf(argv[i+1], MSDK_STRING("%hu,%hu"),\
+                        &(pSignalInfoOut->VideoFullRange),\
+                        &(pSignalInfoOut->ColourPrimaries)
+                       );
+        if (k != 2)
+        {
+            PrintError(argv[0], MSDK_STRING("Invalid number of layers for SignalInfoOut"));
             return MFX_ERR_UNSUPPORTED;
         }
         i += 1;

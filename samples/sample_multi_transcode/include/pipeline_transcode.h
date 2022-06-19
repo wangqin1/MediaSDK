@@ -188,6 +188,12 @@ namespace TranscodingSample
         mfxU16 MaxContentLightLevel;
         mfxU16 MaxPicAverageLightLevel;
     } sSEIMetaContentLightLevel;
+
+	typedef struct {
+        bool   Enabled;
+        mfxU16 VideoFullRange;
+        mfxU16 ColourPrimaries;
+	} sVideoSignalInfo;
 #endif
     struct __sInputParams
     {
@@ -372,6 +378,9 @@ namespace TranscodingSample
         sSEIMetaContentLightLevel SEIMetaCLLI;
         bool bEnableMDCV;
         bool bEnableCLLI;
+
+        sVideoSignalInfo SignalInfoIn;
+        sVideoSignalInfo SignalInfoOut;
 #endif
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
