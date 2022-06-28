@@ -1111,11 +1111,9 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
         case MFX_LEVEL_AVC_5:
         case MFX_LEVEL_AVC_51:
         case MFX_LEVEL_AVC_52:
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_LEVEL_AVC_6:
         case MFX_LEVEL_AVC_61:
         case MFX_LEVEL_AVC_62:
-#endif
             out->mfx.CodecLevel = in->mfx.CodecLevel;
             break;
         default:

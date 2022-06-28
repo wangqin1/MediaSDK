@@ -367,12 +367,10 @@ inline bool CheckLevel(uint8_t level_idc, bool ignore_level_constrain = false)
     case H264VideoDecoderParams::H264_LEVEL_9:
         return true;
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case H264VideoDecoderParams::H264_LEVEL_6:
     case H264VideoDecoderParams::H264_LEVEL_61:
     case H264VideoDecoderParams::H264_LEVEL_62:
         return ignore_level_constrain;
-#endif
 
     default:
         return false;
@@ -430,6 +428,11 @@ Status H264HeadersBitstream::GetSequenceParamSet(H264SeqParamSet *sps, bool igno
 
     if (sps->level_idc == H264VideoDecoderParams::H264_LEVEL_UNKNOWN)
         sps->level_idc = H264VideoDecoderParams::H264_LEVEL_52;
+
+    if (sps->level_idc == H264VideoDecoderParams::H264_LEVEL_6 ||
+        sps->level_idc == H264VideoDecoderParams::H264_LEVEL_61 ||
+        sps->level_idc == H264VideoDecoderParams::H264_LEVEL_62)
+        ignore_level_constrain = true;
 
     MFX_CHECK(CheckLevel(sps->level_idc, ignore_level_constrain), UMC_ERR_INVALID_STREAM);
 
