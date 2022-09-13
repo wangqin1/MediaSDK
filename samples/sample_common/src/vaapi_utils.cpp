@@ -509,7 +509,23 @@ VAStatus CLibVA::AcquireUserSurface(
         ext_buffer.pitches[1] = ext_buffer.pitches[0];
         ext_buffer.num_planes = 2;
         break;
-
+    case VA_FOURCC_I420:
+        ext_buffer.pitches[0] = ((surf_info.width + pitch_align -1) /
+                                  pitch_align) *
+                                  pitch_align;
+        size = (ext_buffer.pitches[0] * surf_info.height) * 3/2;// frame size align with pitch.
+        size = (size+base_addr_align-1) /
+                base_addr_align *
+                base_addr_align;// frame size align as 4K page.
+        ext_buffer.offsets[0] = 0;// Y channel
+        ext_buffer.offsets[1] = ext_buffer.pitches[0] *
+                                    surf_info.height; // UV channel.
+        ext_buffer.offsets[2] = ext_buffer.pitches[0] *
+                                    surf_info.height * 5 / 4; // UV channel.
+        ext_buffer.pitches[1] = ext_buffer.pitches[0] / 2;
+        ext_buffer.pitches[2] = ext_buffer.pitches[0] / 2;
+        ext_buffer.num_planes = 3;
+        break;
     case VA_FOURCC_AYUV:
         ext_buffer.pitches[0] = ((surf_info.width + pitch_align -1) /
                                   pitch_align) *

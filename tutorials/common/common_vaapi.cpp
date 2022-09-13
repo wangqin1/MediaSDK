@@ -434,6 +434,23 @@ mfxStatus simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData* ptr)
                 } else
                     mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
+            case VA_FOURCC_I420:
+                if (vaapi_mid->m_fourcc == MFX_FOURCC_I420) {
+                    ptr->Pitch =
+                        (mfxU16) vaapi_mid->
+                        m_image.pitches[0];
+                    ptr->Y =
+                        pBuffer +
+                        vaapi_mid->m_image.offsets[0];
+                    ptr->U =
+                        pBuffer +
+                        vaapi_mid->m_image.offsets[1];
+                    ptr->V =
+                        pBuffer +
+                        vaapi_mid->m_image.offsets[2];
+                } else
+                    mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
             case VA_FOURCC_YUY2:
                 if (vaapi_mid->m_fourcc == MFX_FOURCC_YUY2) {
                     ptr->Pitch =

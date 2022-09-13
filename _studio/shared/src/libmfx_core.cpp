@@ -1228,7 +1228,7 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
         break;
 
     case MFX_FOURCC_YV12:
-
+    case MFX_FOURCC_I420:
         sts = m_pFastCopy->Copy(pDst, dstPitch, pSrc, srcPitch, roi, COPY_SYS_TO_SYS);
 
         roi.height >>= 1;
@@ -1364,7 +1364,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
         break;
 
     case MFX_FOURCC_YV12:
-
+    case MFX_FOURCC_I420:
         sts = FastCopy::Copy(pDst->Data.Y, dstPitch, pSrc->Data.Y, srcPitch, roi, copyFlag);
         MFX_CHECK_STS(sts);
         roi.width >>= 1;

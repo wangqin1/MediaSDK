@@ -60,6 +60,8 @@ static inline unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_YUY2;
     case MFX_FOURCC_YV12:
         return VA_FOURCC_YV12;
+    case MFX_FOURCC_I420:
+        return VA_FOURCC_I420;
     case MFX_FOURCC_AYUV:
         return VA_FOURCC_AYUV;
 #if defined (MFX_ENABLE_FOURCC_RGB565)
@@ -176,6 +178,7 @@ static inline bool isFourCCSupported(unsigned int va_fourcc)
     {
         case VA_FOURCC_NV12:
         case VA_FOURCC_YV12:
+        case VA_FOURCC_I420:
         case VA_FOURCC_YUY2:
         case VA_FOURCC_ARGB:
         case VA_FOURCC_ABGR:
@@ -471,6 +474,16 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         }
         break;
 
+    case VA_FOURCC_I420:
+        if (mfx_fourcc != va_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;
+
+        {
+            ptr->Y = p_buffer + va_image.offsets[0];
+            ptr->U = p_buffer + va_image.offsets[1];
+            ptr->V = p_buffer + va_image.offsets[2];
+        }
+        break;
+        
     case VA_FOURCC_YUY2:
         if (mfx_fourcc != va_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;
 

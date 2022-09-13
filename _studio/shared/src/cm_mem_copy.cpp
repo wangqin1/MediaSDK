@@ -111,6 +111,7 @@ bool CmCopyWrapper::isSinglePlainFormat(mfxU32 format)
     case MFX_FOURCC_NV12:
     case MFX_FOURCC_P010:
     case MFX_FOURCC_YV12:
+    case MFX_FOURCC_I420:
     case MFX_FOURCC_NV16:
     case MFX_FOURCC_P210:
 #if (MFX_VERSION >= 1031)

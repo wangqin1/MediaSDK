@@ -93,6 +93,7 @@ MFX_PACK_END()
 enum {
     MFX_FOURCC_NV12         = MFX_MAKEFOURCC('N','V','1','2'),   /* Native Format */
     MFX_FOURCC_YV12         = MFX_MAKEFOURCC('Y','V','1','2'),
+    MFX_FOURCC_I420         = MFX_MAKEFOURCC('I','4','2','0'),
     MFX_FOURCC_NV16         = MFX_MAKEFOURCC('N','V','1','6'),
     MFX_FOURCC_YUY2         = MFX_MAKEFOURCC('Y','U','Y','2'),
 #if (MFX_VERSION >= 1028)
