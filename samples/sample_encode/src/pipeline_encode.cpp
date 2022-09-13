@@ -923,7 +923,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 mfxU32 CEncodingPipeline::FileFourCC2EncFourCC(mfxU32 fcc)
 {
     // File reader automatically converts I420 and YV12 to NV12
-    if (fcc == MFX_FOURCC_I420 || fcc == MFX_FOURCC_YV12)
+    
+    if ((fcc == MFX_FOURCC_I420 || fcc == MFX_FOURCC_YV12) && !m_I420toNV12HWFlag)
         return MFX_FOURCC_NV12;
     else
         return fcc;
@@ -1455,7 +1456,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_pEncSurfaces = NULL;
     m_pVppSurfaces = NULL;
     m_InputFourCC = 0;
-
+    m_I420toNV12HWFlag = 0;
     m_nPerfOpt = 0;
     m_nTimeout = 0;
 
@@ -1781,9 +1782,14 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 #if defined (USE_OPENGL)
     m_useOpenGL = pParams->useOpenGL;
 #endif
-
+    m_I420toNV12HWFlag=pParams->nI420toNV12HWFlag;
     // FileReader can convert yv12->nv12 without vpp
-    m_InputFourCC = (pParams->FileInputFourCC == MFX_FOURCC_I420) ? MFX_FOURCC_NV12 : pParams->FileInputFourCC;
+    if(!m_I420toNV12HWFlag)
+    {
+        m_InputFourCC = (pParams->FileInputFourCC == MFX_FOURCC_I420) ? MFX_FOURCC_NV12 : pParams->FileInputFourCC;
+    }else{
+        m_InputFourCC = pParams->FileInputFourCC;
+    }
 
     m_nTimeout = pParams->nTimeout;
 #if defined(LINUX32) || defined(LINUX64)

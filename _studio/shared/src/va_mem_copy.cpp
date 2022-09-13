@@ -235,7 +235,16 @@ VAStatus VaCopyWrapper::CreateUserVaSurface(
         ext_buffer.offsets[2] = ext_buffer.offsets[1] + 1;
         ext_buffer.num_planes = 2;
         break;
-
+    case VA_FOURCC_I420:
+        ext_buffer.pitches[0] = ALIGN(surfaceInfo.pitch, 32);
+        ext_buffer.pitches[1] = ext_buffer.pitches[0]/2;
+        ext_buffer.pitches[2] = ext_buffer.pitches[0]/2;
+        size = (ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32)) * 3 / 2;// frame size align with pitch.
+        ext_buffer.offsets[0] = 0;// Y channel
+        ext_buffer.offsets[1] = ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32); // UV channel.
+        ext_buffer.offsets[2] = ext_buffer.offsets[1] + ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 32)/4;
+        ext_buffer.num_planes = 3;
+        break;
     case VA_FOURCC_AYUV:
         ext_buffer.pitches[0] = ALIGN(surfaceInfo.pitch, 32);
         size = ext_buffer.pitches[0] * ALIGN(surfaceInfo.height, 16);// frame size align with pitch.
@@ -289,6 +298,7 @@ bool VaCopyWrapper::IsVaCopyFormatSupported(mfxU32 fourCC)
     switch (fourCC)
     {
     case VA_FOURCC_NV12:
+    case VA_FOURCC_I420:
     case VA_FOURCC_AYUV:
     case VA_FOURCC_P010:
     case VA_FOURCC_YUY2:
@@ -311,6 +321,8 @@ mfxU32 VaCopyWrapper::ConvertVAFormatToMfxFourcc(mfxU32 fourCC)
         return MFX_FOURCC_UYVY;
     case VA_FOURCC_YV12:
         return MFX_FOURCC_YV12;
+    case VA_FOURCC_I420:
+        return MFX_FOURCC_I420;
 #if (MFX_VERSION >= 1028)
     case VA_FOURCC_RGB565:
         return MFX_FOURCC_RGB565;
@@ -353,6 +365,8 @@ mfxU32 VaCopyWrapper::ConvertMfxFourccToVAFormat(mfxU32 fourcc)
     {
     case MFX_FOURCC_NV12:
         return VA_FOURCC_NV12;
+    case MFX_FOURCC_I420:
+        return VA_FOURCC_I420;
     case MFX_FOURCC_YUY2:
         return VA_FOURCC_YUY2;
     case MFX_FOURCC_UYVY:
@@ -422,7 +436,10 @@ mfxStatus VaCopyWrapper::AcquireUserVaSurface(mfxFrameSurface1 *pSurface)
             surfaceInfo.fourCC = VA_FOURCC_NV12;
             surfaceInfo.format = VA_RT_FORMAT_YUV420;
             break;
-
+        case MFX_FOURCC_I420:
+            surfaceInfo.fourCC = VA_FOURCC_I420;
+            surfaceInfo.format = VA_RT_FORMAT_YUV420;
+            break;
         case MFX_FOURCC_AYUV:
             surfaceInfo.fourCC = VA_FOURCC_AYUV;
             surfaceInfo.format = VA_FOURCC_AYUV;
@@ -484,7 +501,7 @@ mfxStatus VaCopyWrapper::VACopy(VASurfaceID srcSurface, VASurfaceID dstSurface, 
 
     option.bits.va_copy_sync = VA_EXEC_SYNC;
     option.bits.va_copy_mode = vaCopyMode;
-
+    
     va_sts = vaCopy(m_dpy, &dst_obj, &src_obj, option);
     mfx_sts = va_to_mfx_status(va_sts);
     MFX_CHECK_STS(mfx_sts);

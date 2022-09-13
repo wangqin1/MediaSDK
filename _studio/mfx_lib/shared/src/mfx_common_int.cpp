@@ -526,7 +526,7 @@ mfxStatus CheckFramePointers(mfxFrameInfo const& info, mfxFrameData const& data)
         case MFX_FOURCC_BGR4:
         case MFX_FOURCC_ARGB16:
         case MFX_FOURCC_ABGR16:      MFX_CHECK(data.R && data.G && data.B && data.A, MFX_ERR_UNDEFINED_BEHAVIOR); break;
-
+        case MFX_FOURCC_I420:
         case MFX_FOURCC_YV12:
         case MFX_FOURCC_YUY2:
         default:                     MFX_CHECK(data.Y && data.U && data.V, MFX_ERR_UNDEFINED_BEHAVIOR); break;
@@ -938,6 +938,7 @@ mfxU32 GetMinPitch(mfxU32 fourcc, mfxU16 width)
         case MFX_FOURCC_P8_TEXTURE:
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_YV12:
+        case MFX_FOURCC_I420:
 #ifdef MFX_ENABLE_RGBP
         case MFX_FOURCC_RGBP:
 #endif

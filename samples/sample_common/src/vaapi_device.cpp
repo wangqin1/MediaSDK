@@ -495,7 +495,10 @@ mfxStatus CVAAPIDeviceDRM::SetupUserSurface(mfxFrameSurface1 * pSurface)
             m_sysSurfInfo.fourCC = VA_FOURCC_NV12;
             m_sysSurfInfo.format = VA_RT_FORMAT_YUV420;
             break;
-
+        case MFX_FOURCC_I420:
+            m_sysSurfInfo.fourCC = VA_FOURCC_I420;
+            m_sysSurfInfo.format = VA_RT_FORMAT_YUV420;
+            break;
         case MFX_FOURCC_AYUV:
             m_sysSurfInfo.fourCC = VA_FOURCC_AYUV;
             m_sysSurfInfo.format = VA_FOURCC_AYUV;
@@ -540,7 +543,11 @@ mfxStatus CVAAPIDeviceDRM::SetupUserSurface(mfxFrameSurface1 * pSurface)
         ptr->U = p_buf + pitch * pInfo.Height;
         ptr->V = ptr->U + 1;
         break;
-
+    case MFX_FOURCC_I420:
+        ptr->Y = p_buf;
+        ptr->U = p_buf + pitch * pInfo.Height;
+        ptr->V = p_buf + pitch * pInfo.Height * 5 / 4;
+        break; 
     case MFX_FOURCC_AYUV:
         pitch *= 4;
         ptr->V = p_buf;

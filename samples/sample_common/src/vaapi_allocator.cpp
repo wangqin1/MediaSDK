@@ -39,6 +39,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_NV12;
     case MFX_FOURCC_YUY2:
         return VA_FOURCC_YUY2;
+    case MFX_FOURCC_I420:
+        return VA_FOURCC_I420;
     case MFX_FOURCC_UYVY:
         return VA_FOURCC_UYVY;
     case MFX_FOURCC_YV12:
@@ -157,6 +159,7 @@ static mfxStatus GetVAFourcc(mfxU32 fourcc, unsigned int &va_fourcc)
     va_fourcc = ConvertMfxFourccToVAFormat(mfx_fourcc);
     if (!va_fourcc || ((VA_FOURCC_NV12 != va_fourcc) &&
         (VA_FOURCC_YV12 != va_fourcc) &&
+        (VA_FOURCC_I420 != va_fourcc) &&
         (VA_FOURCC_YUY2 != va_fourcc) &&
         (VA_FOURCC_ARGB != va_fourcc) &&
         (VA_FOURCC_ABGR != va_fourcc) &&
@@ -602,6 +605,15 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
                     ptr->V = pBuffer + vaapi_mid->m_image.offsets[1];
                     ptr->U = pBuffer + vaapi_mid->m_image.offsets[2];
+                }
+                break;
+            case VA_FOURCC_I420:
+                if (mfx_fourcc != vaapi_mid->m_image.format.fourcc) return MFX_ERR_LOCK_MEMORY;
+
+                {
+                    ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
+                    ptr->U = pBuffer + vaapi_mid->m_image.offsets[1];
+                    ptr->V = pBuffer + vaapi_mid->m_image.offsets[2];
                 }
                 break;
             case VA_FOURCC_YUY2:

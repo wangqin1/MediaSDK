@@ -69,6 +69,7 @@ namespace MfxHwVideoProcessing
     {
         MFX_FOURCC_NV12      ,
         MFX_FOURCC_YV12      ,
+        MFX_FOURCC_I420      ,
         MFX_FOURCC_NV16      ,
         MFX_FOURCC_YUY2      ,
         MFX_FOURCC_RGB3      ,

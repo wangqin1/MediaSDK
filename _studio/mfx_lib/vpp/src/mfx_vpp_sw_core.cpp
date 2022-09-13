@@ -969,6 +969,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
 
         /* [IN VPP] data */
         if( out->vpp.In.FourCC != MFX_FOURCC_YV12 &&
+            out->vpp.In.FourCC != MFX_FOURCC_I420 &&
             out->vpp.In.FourCC != MFX_FOURCC_NV12 &&
             out->vpp.In.FourCC != MFX_FOURCC_YUY2 &&
 #if defined (MFX_ENABLE_FOURCC_RGB565)

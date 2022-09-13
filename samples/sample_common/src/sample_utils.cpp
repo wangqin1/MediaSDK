@@ -318,7 +318,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             return MFX_ERR_UNSUPPORTED;
         }
     }
-    else if (MFX_FOURCC_NV12 == pInfo.FourCC || MFX_FOURCC_YV12 == pInfo.FourCC || MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC)
+    else if (MFX_FOURCC_NV12 == pInfo.FourCC || MFX_FOURCC_YV12 == pInfo.FourCC || MFX_FOURCC_I420 == pInfo.FourCC || MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC)
     {
         pitch = pData.Pitch;
         ptr = pData.Y + pInfo.CropX + pInfo.CropY * pData.Pitch;
@@ -415,6 +415,37 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                     ptr2 = pData.U + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
                 }
 
+                for(i = 0; i < h; i++)
+                {
+
+                    nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, m_files[vid]);
+
+                    if (w != nBytesRead)
+                    {
+                        return MFX_ERR_MORE_DATA;
+                    }
+                }
+                for(i = 0; i < h; i++)
+                {
+                    nBytesRead = (mfxU32)fread(ptr2 + i * pitch, 1, w, m_files[vid]);
+
+                    if (w != nBytesRead)
+                    {
+                        return MFX_ERR_MORE_DATA;
+                    }
+                }
+                break;
+            case MFX_FOURCC_I420:
+                w /= 2;
+                h /= 2;
+                pitch /= 2;
+                if (m_ColorFormat == MFX_FOURCC_I420) {
+                    ptr  = pData.U + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
+                    ptr2 = pData.V + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
+                } else {
+                    ptr  = pData.V + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
+                    ptr2 = pData.U + (pInfo.CropX / 2) + (pInfo.CropY / 2) * pitch;
+                }
                 for(i = 0; i < h; i++)
                 {
 
@@ -1749,7 +1780,7 @@ const msdk_char* ColorFormatToStr(mfxU32 format)
     case MFX_FOURCC_YV12:
         return MSDK_STRING("YV12");
     case MFX_FOURCC_I420:
-        return MSDK_STRING("YUV420");
+        return MSDK_STRING("I420");
     case MFX_FOURCC_RGB4:
         return MSDK_STRING("RGB4");
     case MFX_FOURCC_YUY2:
@@ -2624,6 +2655,8 @@ mfxU16 FourCCToChroma(mfxU32 fourCC)
     switch(fourCC)
     {
     case MFX_FOURCC_NV12:
+    case MFX_FOURCC_YV12:
+    case MFX_FOURCC_I420:
     case MFX_FOURCC_P010:
         return MFX_CHROMAFORMAT_YUV420;
     case MFX_FOURCC_NV16:

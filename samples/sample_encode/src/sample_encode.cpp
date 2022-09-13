@@ -404,7 +404,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         PrintHelp(strInput[0], NULL);
         return MFX_ERR_UNSUPPORTED;
     }
-
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
     msdk_opt_read(MSDK_CPU_ROTATE_PLUGIN, pParams->strPluginDLLPath);
 
@@ -414,6 +413,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     pParams->nNumFrames = 0;
     pParams->FileInputFourCC = MFX_FOURCC_I420;
     pParams->EncodeFourCC = 0;
+    pParams->nI420toNV12HWFlag = 0;
     pParams->nPRefType = MFX_P_REF_DEFAULT;
     pParams->QPFileMode = false;
     pParams->BitrateLimit = MFX_CODINGOPTION_OFF;
@@ -555,6 +555,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-uyvy")))
         {
             pParams->FileInputFourCC = MFX_FOURCC_UYVY;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i420")))
+        {
+            pParams->FileInputFourCC = MFX_FOURCC_I420;
+            pParams->nI420toNV12HWFlag = 1;
+            msdk_printf(MSDK_STRING("HW i420 to nv12 conversion is enabled!\n"));
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yv12")))
+        {
+            pParams->FileInputFourCC = MFX_FOURCC_YV12;
         }
 #if (MFX_VERSION >= 1027)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y210")))

@@ -96,6 +96,7 @@ struct sInputParams
     mfxU32 CodecId;
     mfxU32 FileInputFourCC;
     mfxU32 EncodeFourCC;
+    mfxU16 nI420toNV12HWFlag;
     mfxU16 nPicStruct;
     mfxU16 nWidth; // source picture width
     mfxU16 nHeight; // source picture height
@@ -391,7 +392,7 @@ protected:
     mfxU16 m_MVCflags; // MVC codec is in use
 
     mfxU32 m_InputFourCC;
-
+    mfxU32 m_I420toNV12HWFlag;
     std::unique_ptr<MFXVideoUSER> m_pUserModule;
     std::unique_ptr<MFXPlugin> m_pPlugin;
     std::unique_ptr<MFXPlugin> m_pPreEncPlugin;

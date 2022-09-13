@@ -484,6 +484,7 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
         {
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_YV12:
+        case MFX_FOURCC_I420:
         case MFX_FOURCC_YUY2:
         case MFX_FOURCC_UYVY:
         case MFX_FOURCC_RGB4:
@@ -1995,7 +1996,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_TiledVideoWall(mfxExecutePar
 mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute_Composition");
-
+    
     VAStatus vaSts = VA_STATUS_SUCCESS;
     VASurfaceAttrib attrib;
     std::vector<VABlendState> blend_state;
