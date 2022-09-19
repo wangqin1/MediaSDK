@@ -431,7 +431,8 @@ int main(int argc, msdk_char *argv[])
 
             // In-place conversion check - I420 and YV12+D3D11 should be converted in reader and processed as NV12
             bool shouldConvert = false;
-            if ((Params.ImpLib & 0x0f00) == MFX_IMPL_VIA_D3D11 && realFrameInfoIn[i].FourCC == MFX_FOURCC_YV12)
+             if (realFrameInfoIn[i].FourCC == MFX_FOURCC_I420 ||
+                ((Params.ImpLib & 0x0f00) == MFX_IMPL_VIA_D3D11 && realFrameInfoIn[i].FourCC == MFX_FOURCC_YV12))
             {
                 realFrameInfoIn[i].FourCC = MFX_FOURCC_YV12;
                 shouldConvert = true;
@@ -449,7 +450,8 @@ int main(int argc, msdk_char *argv[])
     {
         // D3D11 does not support I420 and YV12 surfaces. So file reader will convert them into nv12.
         // It may be slower than using vpp
-        if ((Params.ImpLib & 0x0f00) == MFX_IMPL_VIA_D3D11 && Params.fccSource == MFX_FOURCC_YV12)
+        if (Params.fccSource == MFX_FOURCC_I420 ||
+            ((Params.ImpLib & 0x0f00) == MFX_IMPL_VIA_D3D11 && Params.fccSource == MFX_FOURCC_YV12))
         {
             msdk_printf(MSDK_STRING("[WARNING] D3D11 does not support YV12 and I420 surfaces. Input will be converted to NV12 by file reader.\n"));
             Params.inFrameInfo[0].FourCC = MFX_FOURCC_NV12;
