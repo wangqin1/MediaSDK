@@ -78,7 +78,14 @@ typedef struct tagENCODE_CAPS_HEVC
         };
         uint8_t ROICaps;
     };
-
+    union {
+        struct {
+            uint8_t DQPSupport                : 1; // [0..16]    
+            uint8_t log2_DQP_BlockSize : 4;
+            uint8_t DQPSizeInBytes                  : 3; 
+        };
+        uint8_t DQPCaps;
+    };
     union {
         struct {
             uint32_t SliceLevelReportSupport         : 1;
@@ -124,8 +131,8 @@ typedef struct tagENCODE_CAPS_HEVC
         };
         uint16_t CodingLimits3;
     };
-
-    uint32_t reserved32bits1;
+    uint16_t reserved16bits1;
+    //uint32_t reserved32bits1;
     uint32_t reserved32bits2;
     uint32_t reserved32bits3;
 

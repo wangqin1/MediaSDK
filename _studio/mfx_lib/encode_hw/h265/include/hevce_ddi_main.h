@@ -72,7 +72,14 @@ typedef struct tagENCODE_CAPS_HEVC
         };
         UCHAR    ROICaps;
     };
-
+    union {
+        struct {
+            UCHAR DQPSupport                : 1; // [0..16]    
+            UCHAR log2_DQP_BlockSize : 4;
+            UCHAR DQPSizeInBytes                  : 3; 
+        };
+        UCHAR DQPCaps;
+    };
     union {
         struct {
             UINT    SliceLevelReportSupport         : 1;
@@ -106,7 +113,7 @@ typedef struct tagENCODE_CAPS_HEVC
     USHORT   MaxNumOfMoveRect;
     USHORT   MaxNumOfConcurrentFramesMinus1;
     USHORT   LLCSizeInMBytes;
-    USHORT   reserved16bits0;
+   // USHORT   reserved16bits0;
     UINT     reserved32bits1;
     UINT     reserved32bits2;
     UINT     reserved32bits3;

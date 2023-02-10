@@ -1824,7 +1824,6 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
         auto& task = Task::Common::Get(s_task);
 
         MFX_CHECK(task.CUQP.Mid && task.bCUQPMap, MFX_ERR_NONE);
-
         mfxExtMBQP *mbqp = ExtBuffer::Get(task.ctrl);
         auto& par = Glob::VideoParam::Get(global);
         auto& core = Glob::VideoCore::Get(global);
@@ -1835,7 +1834,7 @@ void Legacy::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
 
         mfxU32 drBlkW = m_CUQPBlkW;  // block size of driver
         mfxU32 drBlkH = m_CUQPBlkH;  // block size of driver
-        mfxU16 inBlkSize = 16; //mbqp->BlockSize ? mbqp->BlockSize : 16;  //input block size
+        mfxU16 inBlkSize = mbqp->BlockSize ? (8<<mbqp->BlockSize) : 16;  //input block size
 
         mfxU32 pitch_MBQP = (par.mfx.FrameInfo.Width + inBlkSize - 1) / inBlkSize;
 
@@ -2307,6 +2306,7 @@ void Legacy::ConfigureTask(
 
     const mfxExtMBQP *pMBQP = ExtBuffer::Get(task.ctrl);
     task.bCUQPMap |= (pMBQP && pMBQP->NumQPAlloc > 0);
+    task.bCUDeltaQPMap = task.bCUQPMap && (pMBQP->Mode == MFX_MBQP_MODE_QP_DELTA);
 
     bool bUpdateIRState = task.TemporalID == 0 && CO2.IntRefType;
     if (bUpdateIRState)

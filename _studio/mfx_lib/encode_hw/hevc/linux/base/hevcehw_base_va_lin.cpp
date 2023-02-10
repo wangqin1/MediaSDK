@@ -341,6 +341,7 @@ mfxStatus DDI_VA::QueryCaps()
         , VAConfigAttribEncDirtyRect
         , VAConfigAttribMaxFrameSize
         , VAConfigAttribContextPriority
+        , VAConfigAttribEncPerBlockControl
     };
     std::vector<VAConfigAttrib> attrs;
     auto AV = [&](VAConfigAttribType t) { return attrs[idx_map[t]].value; };
@@ -408,6 +409,14 @@ mfxStatus DDI_VA::QueryCaps()
         m_caps.MaxNumOfROI                  = roi.bits.num_roi_regions;
         m_caps.ROIBRCPriorityLevelSupport   = roi.bits.roi_rc_priority_support;
         m_caps.ROIDeltaQPSupport            = roi.bits.roi_rc_qp_delta_support;
+    }
+    
+    if(AV(VAConfigAttribEncPerBlockControl) != VA_ATTRIB_NOT_SUPPORTED)
+    {
+        auto pbc = *(VAConfigAttribValEncPerBlockControl*)&attrs[idx_map[VAConfigAttribEncPerBlockControl]].value;
+        m_caps.DQPSupport                  = pbc.bits.delta_qp_support;
+        m_caps.log2_DQP_BlockSize          = pbc.bits.log2_delta_qp_block_size-3;// substract 3 for the Compatible with mbqp blocksize, which is 8<<blocksize.
+        m_caps.DQPSizeInBytes              = pbc.bits.delta_qp_size_in_bytes;
     }
 
     if (AV(VAConfigAttribEncDirtyRect) != VA_ATTRIB_NOT_SUPPORTED &&

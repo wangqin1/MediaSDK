@@ -310,6 +310,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -roi_file <roi-file-name>\n"));
     msdk_printf(MSDK_STRING("                Set Regions of Interest for each frame from <roi-file-name>\n"));
     msdk_printf(MSDK_STRING("  -roi_qpmap    Use QP map to emulate ROI for CQP mode\n"));
+    msdk_printf(MSDK_STRING("  -RoiDqpMap <roi-file-name>\n"));
+    msdk_printf(MSDK_STRING("                Set Regions of Interest for each frame from <roi-file-name>\n"));
     msdk_printf(MSDK_STRING("  -extmbqp      Use external MBQP map\n"));
 #endif //MFX_VERSION >= 1022
     msdk_printf(MSDK_STRING("  -AvcTemporalLayers [array:Layer.Scale]    Configures the temporal layers hierarchy\n"));
@@ -1705,6 +1707,19 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 
             if(!ParseROIFile(strRoiFile, InputParams.m_ROIData)) {
                 PrintError(MSDK_STRING("Incorrect ROI file: \"%s\" "), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-RoiDqpMap")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            msdk_char strRoiFile[MSDK_MAX_FILENAME_LEN];
+            SIZE_CHECK((msdk_strlen(argv[i])+1) > MSDK_ARRAY_LEN(strRoiFile));
+            msdk_opt_read(argv[i], strRoiFile);
+            InputParams.bRoiDqpMap = true;
+            if(!ParseROIFile(strRoiFile, InputParams.m_ROIData)) {
+                PrintError(MSDK_STRING("Incorrect ROIDqpmap file: \"%s\" "), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
         }

@@ -802,6 +802,7 @@ namespace Base
         Resource            CUQP;
         mfxHDLPair          HDLRaw              = {};
         bool                bCUQPMap            = false;
+        bool                bCUDeltaQPMap       = false;
 #if defined(MFX_ENABLE_LP_LOOKAHEAD) || defined(MFX_ENABLE_ENCTOOLS_LPLA) || defined(MFX_ENABLE_ENCTOOLS)
         mfxLplastatus       LplaStatus          = {};
 #endif

@@ -283,7 +283,7 @@ namespace TranscodingSample
         mfxU16 ExtBrcAdaptiveLTR;
 
         bool   bExtMBQP;
-
+        bool   bRoiDqpMap;
         // MVC Specific Options
         bool   bIsMVC; // true if Multi-View-Codec is in use
         mfxU32 numViews; // number of views for Multi-View-Codec
@@ -872,6 +872,7 @@ namespace TranscodingSample
 
         bool                           m_bROIasQPMAP;
         bool                           m_bExtMBQP;
+        bool                           m_bRoiDqpMap;
         // various external buffers
         bool m_bOwnMVCSeqDescMemory; // true if the pipeline owns memory allocated for MVCSeqDesc structure fields
 
@@ -941,6 +942,7 @@ namespace TranscodingSample
 
         std::map<void*, mfxExtMBQP> m_bufExtMBQP;
         std::map<void*, std::vector<mfxU8> > m_qpMapStorage;
+        std::map<void*, std::vector<mfxI8> > m_DeltaqpMapStorage;
         std::map<void*, std::vector<mfxExtBuffer*> > m_extBuffPtrStorage;
         std::map<void*, mfxEncodeCtrl > encControlStorage;
 

@@ -49,6 +49,7 @@ public:
 
     mfxU32                            m_block_width;
     mfxU32                            m_block_height;
+    
     std::vector<mfxI8>                m_buffer;
 
     CUQPMap() :
@@ -107,6 +108,7 @@ public:
             , const StorageR& //task
             , CUQPMap&>;
         TFillCUQPData FillCUQPData;
+        TFillCUQPData FillCUDeltaQPData;
 
         using TAddMiscData = CallChain<bool
             , const StorageR& //glob

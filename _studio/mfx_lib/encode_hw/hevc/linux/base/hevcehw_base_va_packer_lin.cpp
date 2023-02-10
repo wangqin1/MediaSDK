@@ -424,19 +424,29 @@ static bool FillCUQPDataVA(
     if (!bInitialized)
         return false;
 
+    bool bIsDeltaQP = mbqp->Mode;
+
     const mfxExtHEVCParam & HEVCParam = ExtBuffer::Get(par);
 
     mfxU32 drBlkW = cuqpMap.m_block_width;  // block size of driver
     mfxU32 drBlkH = cuqpMap.m_block_height;  // block size of driver
-    mfxU16 inBlkSize = 16;                    //mbqp->BlockSize ? mbqp->BlockSize : 16;  //input block size
-
+    mfxU16 inBlkSize = mbqp->BlockSize ? (8<<mbqp->BlockSize) : 16;  //input block size
     mfxU32 inputW = CeilDiv(HEVCParam.PicWidthInLumaSamples, inBlkSize);
     mfxU32 inputH = CeilDiv(HEVCParam.PicHeightInLumaSamples, inBlkSize);
-
-    bool bInvalid = !mbqp || !mbqp->QP || (mbqp->NumQPAlloc < inputW * inputH);
+    bool bInvalid = !mbqp || (!mbqp->QP && !mbqp->DeltaQP) || (mbqp->NumQPAlloc < inputW * inputH);
     if (bInvalid  && !task.etQpMapNZ)
         return false;
-
+    if(task.bCUDeltaQPMap){
+        drBlkW=drBlkH=inBlkSize;
+        cuqpMap.m_width        = inputW;
+        cuqpMap.m_height       = inputH;
+        cuqpMap.m_pitch        = mfx::align2_value(cuqpMap.m_width, 64);
+        cuqpMap.m_h_aligned    = mfx::align2_value(cuqpMap.m_height, 4);
+        cuqpMap.m_block_width  = inBlkSize;
+        cuqpMap.m_block_height = inBlkSize;
+        cuqpMap.m_buffer.resize(cuqpMap.m_pitch * cuqpMap.m_h_aligned);
+        std::fill(cuqpMap.m_buffer.begin(), cuqpMap.m_buffer.end(), mfxI8(0)); //resize for reusing mbqp surface
+    }
     if (bInvalid && task.etQpMapNZ) {
         mfxU32 iw = 16;
         mfxU32 ih = 8;
@@ -467,8 +477,7 @@ static bool FillCUQPDataVA(
         {
             mfxU32 y = std::min(i * drBlkH/inBlkSize, inputH - 1);
             mfxU32 x = std::min(j * drBlkW/inBlkSize, inputW - 1);
-
-            cuqpMap.m_buffer[i * cuqpMap.m_pitch + j] = mbqp->QP[y * inputW + x];
+            cuqpMap.m_buffer[i * cuqpMap.m_pitch + j] = bIsDeltaQP ? mbqp->DeltaQP[y * inputW + x] : mbqp->QP[y * inputW + x];
         }
     }
 
@@ -632,7 +641,7 @@ void VAPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
         {
             const mfxExtHEVCParam& HEVCPar = ExtBuffer::Get(par);
             const auto& caps = Glob::EncodeCaps::Get(strg);
-            m_qpMap.Init(HEVCPar.PicWidthInLumaSamples, HEVCPar.PicHeightInLumaSamples, caps.BlockSize);
+            m_qpMap.Init(HEVCPar.PicWidthInLumaSamples, HEVCPar.PicHeightInLumaSamples,caps.BlockSize);
         }
 
         mfxStatus sts = Register(core, Glob::AllocRec::Get(strg).GetResponse(), RES_REF);
@@ -665,6 +674,15 @@ void VAPacker::InitAlloc(const FeatureBlocks& /*blocks*/, TPushIA Push)
                 , const VACodedBufferSegment& fb)
         {
             return ReadFeedback(fb, Task::Common::Get(s_task).BsDataLength);
+        });
+        cc.FillCUDeltaQPData.Push([](
+            CallChains::TFillCUQPData::TExt
+            , const StorageR& global
+            , const StorageR& s_task
+            , CUQPMap& qpmap)
+        {
+            auto& task = Task::Common::Get(s_task);
+            return task.bCUQPMap &&task.bCUDeltaQPMap&& FillCUQPDataVA(task, Glob::VideoParam::Get(global), qpmap);
         });
         cc.FillCUQPData.Push([](
             CallChains::TFillCUQPData::TExt
@@ -892,7 +910,16 @@ void VAPacker::SubmitTask(const FeatureBlocks& /*blocks*/, TPushST Push)
         std::transform(m_slices.begin(), m_slices.end(), std::back_inserter(par)
             , [&](VAEncSliceParameterBufferHEVC& s) { return PackVaBuffer(VAEncSliceParameterBufferType, s); });
 
-        if (cc.FillCUQPData(global, s_task, m_qpMap))
+
+        if (cc.FillCUDeltaQPData(global, s_task, m_qpMap))
+        {
+            par.push_back(PackVaBuffer(
+                VAEncDeltaQpPerBlockBufferType
+                , m_qpMap.m_buffer.data()
+                , m_qpMap.m_pitch
+                , m_qpMap.m_h_aligned));
+        }
+        else if (cc.FillCUQPData(global, s_task, m_qpMap))//fill m_qpMap through FillCUQPData 
         {
             par.push_back(PackVaBuffer(
                 VAEncQPBufferType

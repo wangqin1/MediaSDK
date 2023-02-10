@@ -163,6 +163,7 @@ CTranscodingPipeline::CTranscodingPipeline():
 
 #if MFX_VERSION >= 1022
     m_bUseQPMap = 0;
+    m_bRoiDqpMap =0;
     m_QPmapWidth = 0;
     m_QPmapHeight = 0;
     m_GOPSize = 0;
@@ -1518,7 +1519,60 @@ void CTranscodingPipeline::FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct)
         }
         return;
     }
+    if(m_bRoiDqpMap)
+    {
+        qpMap.Mode=MFX_MBQP_MODE_QP_DELTA;
+        std::memset(qpMap.DeltaQP, 0, qpMap.NumQPAlloc);
+        if (m_ROIData.size() > m_nSubmittedFramesNum)
+        {
+            mfxExtEncoderROI &roi = m_ROIData[m_nSubmittedFramesNum];
 
+            for (mfxI32 i=roi.NumROI-1; i>=0; i--)
+            {
+                mfxU32  l = (roi.ROI[i].Left) >> 4,
+                        t = (roi.ROI[i].Top) >> 4,
+                        r = (roi.ROI[i].Right + 15) >> 4,
+                        b = (roi.ROI[i].Bottom + 15) >> 4;
+
+                //Additional 32x32 block alignment for HEVC
+                if(m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC)
+                {
+                    l = ((roi.ROI[i].Left) >> 5);
+                    t = ((roi.ROI[i].Top) >> 5) ;
+                    r = ((roi.ROI[i].Right + 31) >> 5) ;
+                    b = ((roi.ROI[i].Bottom + 31) >> 5) ;
+                }
+                if(l > m_QPmapWidth) l = m_QPmapWidth;
+                if(r > m_QPmapWidth) r = m_QPmapWidth;
+                if(t > m_QPmapHeight) t = m_QPmapHeight;
+                if(b > m_QPmapHeight) b = m_QPmapHeight;
+                mfxI8  qp_value = (mfxI8)std::min(std::max(0 + (mfxI8)roi.ROI[i].DeltaQP, -51), 51);
+
+                for (mfxU32 j=t; j<b; j++)//y
+                {
+                    for(mfxU32 m=l;m<r;m++)//x
+                    {
+                        mfxU32 index=0;
+                        if((m_QPmapHeight&0x01)&&(j+1==m_QPmapHeight))
+                        {
+                            index=((m_QPmapHeight>>1<<1)*m_QPmapWidth+m);
+                        }
+                        else
+                        {
+                            index=((((j>>1)<<1)*m_QPmapWidth)+((j&0x01)<<1))+(4*(m>>1))+(m&0x01);
+                        }
+                        if(m_QPmapWidth&0x01&&(m+1==m_QPmapWidth))
+                        {
+                            index-=(j&0x1);
+                        }
+                        assert(index<qpMap.NumQPAlloc);
+                        std::memset(qpMap.DeltaQP + index, qp_value, 1);
+                    }
+                }
+            }
+        }
+        return;
+    }
     // External MBQP with ROI case
     if (pictStruct == MFX_PICSTRUCT_PROGRESSIVE)
     {
@@ -1612,19 +1666,23 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, bool bInser
 
     if (extSurface.pSurface) {
         void* keyId = (void*)extSurface.pSurface;
-
         // Use encoded surface pointer to find placeholders for run-time structures in maps
-        if (m_bUseQPMap && m_bufExtMBQP.find(keyId) == m_bufExtMBQP.end()) {
+        if ((m_bUseQPMap||m_bRoiDqpMap) && m_bufExtMBQP.find(keyId) == m_bufExtMBQP.end()) {
             m_extBuffPtrStorage[keyId] = std::vector<mfxExtBuffer*>();
-
-            m_qpMapStorage[keyId] = std::vector<mfxU8>();
-            m_qpMapStorage[keyId].resize(m_QPmapWidth*m_QPmapHeight);
-
             m_bufExtMBQP[keyId] = mfxExtMBQP();
             m_bufExtMBQP[keyId].Header.BufferId = MFX_EXTBUFF_MBQP;
             m_bufExtMBQP[keyId].Header.BufferSz = sizeof(mfxExtMBQP);
             m_bufExtMBQP[keyId].NumQPAlloc = m_QPmapWidth*m_QPmapHeight;
-            m_bufExtMBQP[keyId].QP = m_QPmapWidth && m_QPmapHeight ? &(m_qpMapStorage[keyId][0]) : NULL;
+            if(m_bUseQPMap) {
+                m_qpMapStorage[keyId] = std::vector<mfxU8>();
+                m_qpMapStorage[keyId].resize(m_QPmapWidth*m_QPmapHeight);
+                m_bufExtMBQP[keyId].QP = m_QPmapWidth && m_QPmapHeight ? &(m_qpMapStorage[keyId][0]) : NULL;
+            }else if(m_bRoiDqpMap) {
+                m_DeltaqpMapStorage[keyId] = std::vector<mfxI8>();
+                m_DeltaqpMapStorage[keyId].resize(m_QPmapWidth*m_QPmapHeight);
+                m_bufExtMBQP[keyId].DeltaQP = m_QPmapWidth && m_QPmapHeight ? &(m_DeltaqpMapStorage[keyId][0]) : NULL;
+                m_bufExtMBQP[keyId].BlockSize=2;
+            }
         }
 
         // Initialize *pCtrl optionally copying content of the pExtSurface.pAuxCtrl.encCtrl
@@ -1644,7 +1702,7 @@ void CTranscodingPipeline::SetEncCtrlRT(ExtendedSurface& extSurface, bool bInser
         }
 
         // Attach additional buffer with either MBQP or ROI information
-        if (m_bUseQPMap) {
+        if (m_bUseQPMap || m_bRoiDqpMap) {
 #if (MFX_VERSION >= 1022)
             FillMBQPBuffer(m_bufExtMBQP[keyId], extSurface.pSurface->Info.PicStruct);
             m_extBuffPtrStorage[keyId].push_back((mfxExtBuffer *)&m_bufExtMBQP[keyId]);
@@ -2587,23 +2645,44 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         co3->WinBRCSize = pInParams->WinBRCSize;
     }
 #if MFX_VERSION >= 1022
-    if (pInParams->bROIasQPMAP || pInParams->bExtMBQP)
+
+    if (pInParams->bROIasQPMAP || pInParams->bExtMBQP || pInParams->bRoiDqpMap)
     {
         auto co3 = m_mfxEncParams.AddExtBuffer<mfxExtCodingOption3>();
-        switch(m_mfxEncParams.mfx.CodecId)
+        if(pInParams->bRoiDqpMap)
         {
-        case MFX_CODEC_AVC:
-        case MFX_CODEC_HEVC:
-            // For AVC codec QP map should define QP value for every 16x16 sub-block of a frame
-            m_QPmapWidth = (m_mfxEncParams.mfx.FrameInfo.Width + 15) >> 4;
-            m_QPmapHeight = (m_mfxEncParams.mfx.FrameInfo.Height + 15) >> 4;
-            co3->EnableMBQP = MFX_CODINGOPTION_ON;
-            break;
-        default:
-            m_QPmapWidth = 0;
-            m_QPmapHeight = 0;
-            break;
+            switch(m_mfxEncParams.mfx.CodecId)
+            {
+            case MFX_CODEC_HEVC:
+                // For HEVC codec QP map should define QP value for every 32x32 sub-block of a frame
+                m_QPmapWidth = (m_mfxEncParams.mfx.FrameInfo.Width + 31) >> 5;
+                m_QPmapHeight = (m_mfxEncParams.mfx.FrameInfo.Height + 31) >> 5;
+                co3->EnableMBQP = MFX_CODINGOPTION_ON;
+                break;
+            default:
+                m_QPmapWidth = 0;
+                m_QPmapHeight = 0;
+                break;
+            }
+
         }
+        else
+        {
+            switch(m_mfxEncParams.mfx.CodecId)
+            {
+                case MFX_CODEC_AVC:
+                case MFX_CODEC_HEVC:
+                            // For AVC codec QP map should define QP value for every 16x16 sub-block of a frame
+                    m_QPmapWidth = (m_mfxEncParams.mfx.FrameInfo.Width + 15) >> 4;
+                    m_QPmapHeight = (m_mfxEncParams.mfx.FrameInfo.Height + 15) >> 4;
+                    co3->EnableMBQP = MFX_CODINGOPTION_ON;
+                    break;
+                default:
+                    m_QPmapWidth = 0;
+                    m_QPmapHeight = 0;
+                    break;
+                }
+            }
     }
 #endif
 
@@ -3760,7 +3839,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
     m_bExtMBQP = pParams->bExtMBQP;
     m_bROIasQPMAP = pParams->bROIasQPMAP;
-
+    m_bRoiDqpMap  = pParams->bRoiDqpMap;
 #if MFX_VERSION >= 1022
     m_ROIData = pParams->m_ROIData;
 #endif //MFX_VERSION >= 1022
