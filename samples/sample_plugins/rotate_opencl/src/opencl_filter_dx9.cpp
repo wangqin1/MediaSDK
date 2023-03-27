@@ -131,7 +131,7 @@ cl_int OpenCLFilterDX9::InitDevice()
     return error;
 }
 
-cl_mem OpenCLFilterDX9::CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly)
+cl_mem OpenCLFilterDX9::CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly, cl_image_desc *image_desc)
 {
     mfxHDLPair* mid_pair = static_cast<mfxHDLPair*>(mid);
 

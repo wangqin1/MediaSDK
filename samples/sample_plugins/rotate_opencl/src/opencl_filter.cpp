@@ -44,6 +44,8 @@ OpenCLFilterBase::OpenCLFilterBase() : log(std::clog)
 
     m_currentWidth       = 0;
     m_currentHeight      = 0;
+    m_plane_num          = 2;
+    m_bit_depth          = 8;
 }
 
 OpenCLFilterBase::~OpenCLFilterBase() {
@@ -272,10 +274,13 @@ cl_int OpenCLFilterBase::BuildKernels()
             return error;
         }
 
-        m_kernels[i].clkernelUV = clCreateKernel(m_kernels[i].clprogram, m_kernels[i].kernelUV_FuncName.c_str(), &error);
-        if (error) {
-            log.error() << "OpenCLFilter: clCreateKernel failed. Error code: " << error << endl;
-            return error;
+        if (!m_kernels[i].kernelUV_FuncName.empty())
+        {
+            m_kernels[i].clkernelUV = clCreateKernel(m_kernels[i].clprogram, m_kernels[i].kernelUV_FuncName.c_str(), &error);
+            if (error) {
+                log.error() << "OpenCLFilter: clCreateKernel failed. Error code: " << error << endl;
+                return error;
+            }
         }
     }
 
@@ -289,7 +294,10 @@ cl_int OpenCLFilterBase::AddKernel(const char* filename, const char* kernelY_nam
     OCL_YUV_kernel kernel;
     kernel.program_source = std::string(filename);
     kernel.kernelY_FuncName = std::string(kernelY_name);
-    kernel.kernelUV_FuncName = std::string(kernelUV_name);
+    if (kernelUV_name != nullptr)
+    {
+        kernel.kernelUV_FuncName = std::string(kernelUV_name);
+    }
     kernel.clprogram = 0;
     kernel.clkernelY = kernel.clkernelUV = 0;
     m_kernels.push_back(kernel);
@@ -325,19 +333,40 @@ cl_int OpenCLFilterBase::SetKernelArgs()
         return error;
     }
 
-    // set kernelUV parameters
-    error = clSetKernelArg(m_kernels[m_activeKernel].clkernelUV, 0, sizeof(cl_mem), &m_clbuffer[1]);
-    if(error) {
-        log.error() << "clSetKernelArg failed. Error code: " << error << endl;
-        return error;
-    }
-    error = clSetKernelArg(m_kernels[m_activeKernel].clkernelUV, 1, sizeof(cl_mem), &m_clbuffer[3]);
-    if(error) {
-        log.error() << "clSetKernelArg failed. Error code: " << error << endl;
-        return error;
+    if (m_plane_num > 1)
+    {
+        // set kernelUV parameters
+        error = clSetKernelArg(m_kernels[m_activeKernel].clkernelUV, 0, sizeof(cl_mem), &m_clbuffer[1]);
+        if(error) {
+            log.error() << "clSetKernelArg failed. Error code: " << error << endl;
+            return error;
+        }
+        error = clSetKernelArg(m_kernels[m_activeKernel].clkernelUV, 1, sizeof(cl_mem), &m_clbuffer[3]);
+        if(error) {
+            log.error() << "clSetKernelArg failed. Error code: " << error << endl;
+            return error;
+        }
     }
 
     return error;
+}
+
+cl_int OpenCLFilterBase::SetSurfaceFormat(int planeNum, int bitDepth)
+{
+     cl_int error = CL_SUCCESS;
+
+     if ((planeNum <= 0) || (bitDepth < 8))
+     {
+         m_plane_num = 2;
+         m_bit_depth = 8;
+     }
+     else
+     {
+         m_plane_num = planeNum;
+         m_bit_depth = bitDepth;
+     }
+
+     return error;
 }
 
 cl_int OpenCLFilterBase::ProcessSurface(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut)
@@ -371,13 +400,26 @@ cl_int OpenCLFilterBase::ProcessSurface()
 
     if (m_clbuffer[0] && CL_SUCCESS == error)
     {
-        cl_mem    surfaces[4] = { m_clbuffer[0],
-            m_clbuffer[1],
-            m_clbuffer[2],
-            m_clbuffer[3] };
+        cl_mem surfaces[4];
+        int surfacesNum;
 
-        if (!EnqueueAcquireSurfaces(surfaces, sizeof(surfaces)/sizeof(cl_mem)))
-            return CL_DEVICE_NOT_AVAILABLE;
+        if (m_plane_num > 1)
+        {
+             surfaces[0] = m_clbuffer[0];
+             surfaces[1] = m_clbuffer[1];
+             surfaces[2] = m_clbuffer[2];
+             surfaces[3] = m_clbuffer[3];
+             surfacesNum = 4;
+        }
+        else
+        {
+            surfaces[0] = m_clbuffer[0];
+            surfaces[1] = m_clbuffer[2];
+            surfacesNum = 2;
+        }
+
+        if (!EnqueueAcquireSurfaces(surfaces, surfacesNum))
+             return CL_DEVICE_NOT_AVAILABLE;
 
         // enqueue kernels
         error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelY, 2, NULL, m_GlobalWorkSizeY, m_LocalWorkSizeY, 0, NULL, NULL);
@@ -385,13 +427,17 @@ cl_int OpenCLFilterBase::ProcessSurface()
             log.error() << "clEnqueueNDRangeKernel for Y plane failed. Error code: " << error << endl;
             return error;
         }
-        error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelUV, 2, NULL, m_GlobalWorkSizeUV, m_LocalWorkSizeUV, 0, NULL, NULL);
-        if (error) {
-            log.error() << "clEnqueueNDRangeKernel for UV plane failed. Error code: " << error << endl;
-            return error;
+
+        if (m_plane_num > 1)
+        {
+            error = clEnqueueNDRangeKernel(m_clqueue, m_kernels[m_activeKernel].clkernelUV, 2, NULL, m_GlobalWorkSizeUV, m_LocalWorkSizeUV, 0, NULL, NULL);
+            if (error) {
+                log.error() << "clEnqueueNDRangeKernel for UV plane failed. Error code: " << error << endl;
+                return error;
+            }
         }
 
-        if (!EnqueueReleaseSurfaces(surfaces, sizeof(surfaces)/sizeof(cl_mem)))
+        if (!EnqueueReleaseSurfaces(surfaces, surfacesNum))
             return CL_DEVICE_NOT_AVAILABLE;
 
         // flush & finish the command queue
@@ -462,19 +508,40 @@ cl_int OpenCLFilterBase::PrepareSharedSurfaces(int width, int height, mfxMemId s
     if (!m_bInit)
         return CL_DEVICE_NOT_FOUND;
 
+    cl_image_desc image_desc{};
     m_currentWidth = width;
+    // packed 422, set YUV as 1 plane.
+    if(m_plane_num == 1)
+    {
+        if (m_bit_depth == 8)
+        {
+            image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+            image_desc.image_width = width;
+            image_desc.image_height = height;
+            m_currentWidth = width / 2;
+        }
+        else
+        {
+            m_currentWidth = width / 2;
+        }
+    }
     m_currentHeight = height;
 
     // Setup OpenCL buffers etc.
     if (!m_clbuffer[0]) // Initialize OCL buffers in case of new workload
     {
         // Associate the shared buffer with the kernel object
-        m_clbuffer[0] = CreateSharedSurface(surf_in, 0, true);
-        m_clbuffer[1] = CreateSharedSurface(surf_in, 1, true);
-        m_clbuffer[2] = CreateSharedSurface(surf_out, 0, false);
-        m_clbuffer[3] = CreateSharedSurface(surf_out, 1, false);
-        if (!m_clbuffer[0] || !m_clbuffer[1] || !m_clbuffer[2] || !m_clbuffer[3])
-            return CL_DEVICE_NOT_FOUND;
+        m_clbuffer[0] = CreateSharedSurface(surf_in, 0, true, (m_plane_num == 1 && m_bit_depth == 8) ? &image_desc : nullptr);
+        m_clbuffer[2] = CreateSharedSurface(surf_out, 0, false, (m_plane_num == 1 && m_bit_depth == 8) ? &image_desc : nullptr);
+        if (!m_clbuffer[0] || !m_clbuffer[2])
+           return CL_DEVICE_NOT_FOUND;
+        if (m_plane_num > 1)
+        {
+            m_clbuffer[1] = CreateSharedSurface(surf_in, 1, true, nullptr);
+            m_clbuffer[3] = CreateSharedSurface(surf_out, 1, false, nullptr);
+            if (!m_clbuffer[1] || !m_clbuffer[3])
+                return CL_DEVICE_NOT_FOUND;
+        }
 
         // Work sizes for Y plane
         m_GlobalWorkSizeY[0] = m_currentWidth;
@@ -484,14 +551,16 @@ cl_int OpenCLFilterBase::PrepareSharedSurfaces(int width, int height, mfxMemId s
         m_GlobalWorkSizeY[0] = m_LocalWorkSizeY[0] * (m_GlobalWorkSizeY[0] / m_LocalWorkSizeY[0]);
         m_GlobalWorkSizeY[1] = m_LocalWorkSizeY[1] * (m_GlobalWorkSizeY[1] / m_LocalWorkSizeY[1]);
 
-        // Work size for UV plane
-        m_GlobalWorkSizeUV[0] = m_currentWidth / 2;
-        m_GlobalWorkSizeUV[1] = m_currentHeight / 2;
-        m_LocalWorkSizeUV[0] = chooseLocalSize(m_GlobalWorkSizeUV[0], 8);
-        m_LocalWorkSizeUV[1] = chooseLocalSize(m_GlobalWorkSizeUV[1], 8);
-        m_GlobalWorkSizeUV[0] = m_LocalWorkSizeUV[0] * (m_GlobalWorkSizeUV[0] / m_LocalWorkSizeUV[0]);
-        m_GlobalWorkSizeUV[1] = m_LocalWorkSizeUV[1] * (m_GlobalWorkSizeUV[1] / m_LocalWorkSizeUV[1]);
-
+        if (m_plane_num > 1)
+        {
+            // Work size for UV plane
+            m_GlobalWorkSizeUV[0] = m_currentWidth / 2;
+            m_GlobalWorkSizeUV[1] = m_currentHeight / 2;
+            m_LocalWorkSizeUV[0] = chooseLocalSize(m_GlobalWorkSizeUV[0], 8);
+            m_LocalWorkSizeUV[1] = chooseLocalSize(m_GlobalWorkSizeUV[1], 8);
+            m_GlobalWorkSizeUV[0] = m_LocalWorkSizeUV[0] * (m_GlobalWorkSizeUV[0] / m_LocalWorkSizeUV[0]);
+            m_GlobalWorkSizeUV[1] = m_LocalWorkSizeUV[1] * (m_GlobalWorkSizeUV[1] / m_LocalWorkSizeUV[1]);
+        }
         cl_int error = SetKernelArgs();
         if (error) return error;
     }

@@ -23,6 +23,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_defs.h"
 
 #include <CL/cl_va_api_media_sharing_intel.h>
+#include <CL/cl_ext_intel.h>
 
 using std::endl;
 
@@ -99,19 +100,40 @@ cl_int OpenCLFilterVA::InitDevice()
     return error;
 }
 
-cl_mem OpenCLFilterVA::CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly)
+cl_mem OpenCLFilterVA::CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly, cl_image_desc *image_desc)
 {
     VASurfaceID* surf = NULL;
     mfxStatus sts = m_pAlloc->GetHDL(m_pAlloc->pthis, mid, reinterpret_cast<mfxHDL*>(&surf));
     if (sts) return 0;
 
     cl_int error = CL_SUCCESS;
-    cl_mem mem = lin_clCreateFromVA_APIMediaSurfaceINTEL(m_clcontext, bIsReadOnly ? CL_MEM_READ_ONLY : CL_MEM_READ_WRITE,
-                                            surf, nView, &error);
+    cl_mem_flags mem_flag = bIsReadOnly ? CL_MEM_READ_ONLY : CL_MEM_READ_WRITE;
+
+    if (image_desc) {
+        mem_flag |= CL_MEM_ACCESS_FLAGS_UNRESTRICTED_INTEL;
+    }
+    
+    cl_mem mem = lin_clCreateFromVA_APIMediaSurfaceINTEL(m_clcontext, mem_flag, surf, nView, &error);
     if (error) {
         log.error() << "clCreateFromVA_APIMediaSurfaceINTEL failed. Error code: " << error << endl;
         return 0;
     }
+
+    if (image_desc) {
+        cl_image_format image_format{};
+        image_format.image_channel_order = CL_RGBA;
+        image_format.image_channel_data_type = CL_UNORM_INT8;
+
+        image_desc->mem_object = mem;
+        cl_mem new_mem = clCreateImage(m_clcontext, CL_MEM_READ_WRITE, &image_format, image_desc, nullptr, &error);
+        if (error) {
+            log.error() << "clCreateImage failed. Error code: " << error << endl;
+            return 0;
+        }
+
+        return new_mem;
+    }
+
     return mem;
 }
 
@@ -128,7 +150,19 @@ bool OpenCLFilterVA::EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces)
 
 bool OpenCLFilterVA::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
 {
-    cl_int error = lin_clEnqueueReleaseVA_APIMediaSurfacesINTEL(m_clqueue, nSurfaces, surfaces, 0, NULL, NULL);
+    cl_int error = CL_SUCCESS;
+
+    if (nSurfaces == 2) {
+        cl_mem object = nullptr;
+        error = clGetMemObjectInfo(surfaces[1], CL_MEM_ASSOCIATED_MEMOBJECT, sizeof(cl_mem), &object, nullptr);
+        if (error) {
+            log.error() << "clGetMemObjectInfo failed. Error code: " << error << endl;
+            return false;
+        }
+        clReleaseMemObject(object);
+    }
+
+    error = lin_clEnqueueReleaseVA_APIMediaSurfacesINTEL(m_clqueue, nSurfaces, surfaces, 0, NULL, NULL);
     if (error) {
         log.error() << "clEnqueueReleaseVA_APIMediaSurfacesINTEL failed. Error code: " << error << endl;
         return false;

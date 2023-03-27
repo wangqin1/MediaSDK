@@ -64,6 +64,7 @@ public:
     virtual cl_int OCLInit(mfxHDL pD3DDeviceManager) = 0;
     virtual cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name) = 0;
     virtual cl_int SelectKernel(unsigned kNo) = 0;
+    virtual cl_int SetSurfaceFormat(int planeNum, int bitDepth) = 0;
     virtual cl_int ProcessSurface(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut) = 0;
 };
 
@@ -78,6 +79,7 @@ public:
     virtual cl_int OCLInit(mfxHDL device);
     virtual cl_int AddKernel(const char* filename, const char* kernelY_name, const char* kernelUV_name);
     virtual cl_int SelectKernel(unsigned kNo); // cl
+    virtual cl_int SetSurfaceFormat(int planeNum, int bitDepth);
     virtual cl_int ProcessSurface(int width, int height, mfxMemId pSurfIn, mfxMemId pSurfOut);
 
 protected: // functions
@@ -92,7 +94,7 @@ protected: // functions
     virtual cl_int InitSurfaceSharingExtension() = 0; // vaapi, d3d9, d3d11, etc. specific
     virtual bool   EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces) = 0;
     virtual bool   EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces) = 0;
-    virtual cl_mem CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly) = 0;
+    virtual cl_mem CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly, cl_image_desc *image_desc) = 0;
 
     inline size_t chooseLocalSize(
         size_t globalSize, // frame width or height
@@ -124,6 +126,8 @@ protected: // variables
 
     static const size_t c_shared_surfaces_num = 2; // In and Out
     static const size_t c_ocl_surface_buffers_num = 2*c_shared_surfaces_num; // YIn, UVIn, YOut, UVOut
+    int                 m_plane_num;
+    int                 m_bit_depth;
 
     cl_mem              m_clbuffer[c_ocl_surface_buffers_num];
 

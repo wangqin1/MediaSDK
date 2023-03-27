@@ -117,7 +117,7 @@ cl_int OpenCLFilterDX11::InitDevice() {
     return error;
 }
 
-cl_mem OpenCLFilterDX11::CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly)
+cl_mem OpenCLFilterDX11::CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly, cl_image_desc *image_desc)
 {
     mfxHDLPair mid_pair = { 0 };
     mfxStatus sts = m_pAlloc->GetHDL(m_pAlloc->pthis, mid, reinterpret_cast<mfxHDL*>(&mid_pair));

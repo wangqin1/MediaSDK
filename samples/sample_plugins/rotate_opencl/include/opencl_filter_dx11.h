@@ -37,7 +37,7 @@ private:
     virtual cl_int InitSurfaceSharingExtension();
     virtual cl_int InitDevice();
 
-    virtual cl_mem CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly);
+    virtual cl_mem CreateSharedSurface(mfxMemId mid, int nView, bool bIsReadOnly, cl_image_desc *image_desc);
     virtual bool EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces);
     virtual bool EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces);
 

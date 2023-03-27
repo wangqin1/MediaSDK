@@ -267,6 +267,7 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
                     0};      // output
 
     m_VideoParam = *mfxParam;
+    mfxInfoVPP *pParam = &mfxParam->vpp;
 
     // map opaque surfaces array in case of opaque surfaces
     m_bIsInOpaque = (m_VideoParam.IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) ? true : false;
@@ -355,7 +356,15 @@ mfxStatus Rotate::Init(mfxVideoParam *mfxParam)
 
 #else
         m_OpenCLFilter.reset(new OpenCLFilterVA());
-        error = m_OpenCLFilter.get()->AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV");
+        if (((MFX_FOURCC_YUY2 == pParam->In.FourCC) && (MFX_FOURCC_YUY2 == pParam->Out.FourCC)) ||
+            ((MFX_FOURCC_Y210 == pParam->In.FourCC) && (MFX_FOURCC_Y210 == pParam->Out.FourCC)))
+        {
+            error = m_OpenCLFilter.get()->AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", nullptr);
+        }
+        else
+        { 
+            error = m_OpenCLFilter.get()->AddKernel(readFile("ocl_rotate.cl").c_str(), "rotate_Y", "rotate_UV");
+        }
         if (error) return MFX_ERR_DEVICE_FAILED;
         error = m_OpenCLFilter.get()->OCLInit(m_device);
 #endif
@@ -473,9 +482,28 @@ mfxStatus Rotate::CheckParam(mfxVideoParam *mfxParam, RotateParam *pRotatePar)
     MSDK_CHECK_POINTER(mfxParam, MFX_ERR_NULL_PTR);
 
     mfxInfoVPP *pParam = &mfxParam->vpp;
-
-    // only NV12 color format is supported
-    if (MFX_FOURCC_NV12 != pParam->In.FourCC || MFX_FOURCC_NV12 != pParam->Out.FourCC)
+    // NV12/YUY2/Y210 color format is supported
+    if((MFX_FOURCC_NV12 == pParam->In.FourCC)&&
+       (MFX_FOURCC_NV12 == pParam->Out.FourCC))
+    {     
+        return MFX_ERR_NONE;
+    }
+    else if((MFX_FOURCC_YUY2 == pParam->In.FourCC)&&
+            (MFX_FOURCC_YUY2 == pParam->Out.FourCC))
+    {     
+        return MFX_ERR_NONE;
+    }
+    else if((MFX_FOURCC_Y210 == pParam->In.FourCC)&&
+            (MFX_FOURCC_Y210 == pParam->Out.FourCC))
+    {     
+        return MFX_ERR_NONE;
+    }
+    else if((MFX_FOURCC_P010 == pParam->In.FourCC)&&
+            (MFX_FOURCC_P010 == pParam->Out.FourCC))
+    {
+        return MFX_ERR_NONE;
+    }
+    else
     {
         return MFX_ERR_UNSUPPORTED;
     }
@@ -577,6 +605,21 @@ mfxStatus OpenCLFilterRotator180::SetAllocator(mfxFrameAllocator * pAlloc)
 
 mfxStatus OpenCLFilterRotator180::Process(DataChunk * /*chunk*/)
 {
+    if (m_pIn->Info.FourCC == MFX_FOURCC_YUY2)
+    {
+        m_pOpenCLFilter->SetSurfaceFormat(1, 8);
+    }
+
+    if (m_pIn->Info.FourCC == MFX_FOURCC_Y210)
+    {
+        m_pOpenCLFilter->SetSurfaceFormat(1, 10);
+    }
+
+    if (m_pIn->Info.FourCC == MFX_FOURCC_P010)
+    {
+        m_pOpenCLFilter->SetSurfaceFormat(2, 10);
+    }
+
     cl_int error = m_pOpenCLFilter->ProcessSurface(m_pIn->Info.CropW, m_pIn->Info.CropH, m_pIn->Data.MemId, m_pOut->Data.MemId);
 
     return (error)? MFX_ERR_DEVICE_FAILED: MFX_ERR_NONE;
