@@ -129,7 +129,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_libvaBackend = 0;
     m_bPerfMode = false;
 #endif
-
+    m_nVACopy = -1;
     m_monitorType = 0;
     totalBytesProcessed = 0;
     m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution

@@ -1493,6 +1493,8 @@ CEncodingPipeline::CEncodingPipeline()
     m_bInsertIDR = false;
 
     m_bIsFieldSplitting = false;
+   
+    m_nVACopy = -1;
 
     m_bQPFileMode = false;
 
