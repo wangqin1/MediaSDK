@@ -516,7 +516,7 @@ cl_int OpenCLFilterBase::PrepareSharedSurfaces(int width, int height, mfxMemId s
         if (m_bit_depth == 8)
         {
             image_desc.image_type = CL_MEM_OBJECT_IMAGE2D;
-            image_desc.image_width = width;
+            image_desc.image_width = width / 2;
             image_desc.image_height = height;
             m_currentWidth = width / 2;
         }
