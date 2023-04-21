@@ -150,16 +150,19 @@ bool OpenCLFilterVA::EnqueueAcquireSurfaces(cl_mem* surfaces, int nSurfaces)
 
 bool OpenCLFilterVA::EnqueueReleaseSurfaces(cl_mem* surfaces, int nSurfaces)
 {
-    cl_int error = CL_SUCCESS;
+    cl_int error  = CL_SUCCESS;
+    cl_mem object = nullptr;
+    int    i      = 0;
 
     if (nSurfaces == 2) {
-        cl_mem object = nullptr;
-        error = clGetMemObjectInfo(surfaces[1], CL_MEM_ASSOCIATED_MEMOBJECT, sizeof(cl_mem), &object, nullptr);
-        if (error) {
-            log.error() << "clGetMemObjectInfo failed. Error code: " << error << endl;
-            return false;
+        for (i = 0; i < nSurfaces; i++) {
+            error = clGetMemObjectInfo(surfaces[i], CL_MEM_ASSOCIATED_MEMOBJECT, sizeof(cl_mem), &object, nullptr);
+            if (error) {
+                log.error() << "clGetMemObjectInfo failed. Error code: " << error << endl;
+                return false;
+            }
+            clReleaseMemObject(object);
         }
-        clReleaseMemObject(object);
     }
 
     error = lin_clEnqueueReleaseVA_APIMediaSurfacesINTEL(m_clqueue, nSurfaces, surfaces, 0, NULL, NULL);
