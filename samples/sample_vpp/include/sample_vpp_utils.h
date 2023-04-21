@@ -192,6 +192,8 @@ struct sInputParams
     bool     bScaling;
     mfxU16   scalingMode;
     mfxU16   interpolationMethod;
+    
+    bool bPNGComp;
 
     bool     bChromaSiting;
     mfxU16   uChromaSiting;
@@ -262,6 +264,7 @@ struct sInputParams
         bScaling=false;
         scalingMode=0;
         interpolationMethod=0;
+        bPNGComp=0;
         GPUCopyValue=0;
         bPartialAccel=0;
         numFrames=0;
@@ -376,6 +379,8 @@ public :
     mfxStatus  LoadNextFrame(
         mfxFrameData* pData,
         mfxFrameInfo* pInfo);
+
+    bool m_pngComp;
 
 private:
     mfxStatus  GetPreAllocFrame(mfxFrameSurfaceWrap **pSurface);

@@ -113,6 +113,7 @@ static
     pParams->rotate.clear(); pParams->rotate.push_back(0);
     pParams->bScaling     = false;
     pParams->scalingMode  = MFX_SCALING_MODE_DEFAULT;
+    pParams->bPNGComp=0;
     pParams->interpolationMethod = MFX_INTERPOLATION_DEFAULT;
     pParams->bChromaSiting = false;
     pParams->uChromaSiting = 0;
@@ -428,7 +429,7 @@ int main(int argc, msdk_char *argv[])
             ownToMfxFrameInfo(&(Params.inFrameInfo[i]), &(realFrameInfoIn[i]), true);
             // Set ptsMaker for the first stream only - it will store PTSes
             sts = yuvReaders[i].Init(Params.compositionParam.streamInfo[i].streamName, i == 0 ? ptsMaker.get() : NULL, realFrameInfoIn[i].FourCC);
-
+            yuvReaders[i].m_pngComp = Params.bPNGComp;
             // In-place conversion check - I420 and YV12+D3D11 should be converted in reader and processed as NV12
             bool shouldConvert = false;
              if (realFrameInfoIn[i].FourCC == MFX_FOURCC_I420 ||
@@ -460,6 +461,8 @@ int main(int argc, msdk_char *argv[])
 
         ownToMfxFrameInfo( &(Params.frameInfoIn[0]),  &realFrameInfoIn[0]);
         sts = yuvReaders[VPP_IN].Init(Params.strSrcFile,ptsMaker.get(), Params.fccSource);
+        yuvReaders[VPP_IN].m_pngComp = Params.bPNGComp;
+
         MSDK_CHECK_STATUS(sts, "yuvReaders[VPP_IN].Init failed");
     }
     ownToMfxFrameInfo( &(Params.frameInfoOut[0]), &realFrameInfoOut);

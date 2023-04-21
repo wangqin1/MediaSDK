@@ -165,6 +165,7 @@ msdk_printf(MSDK_STRING("                                  GlobalAlpha=128\n"));
 msdk_printf(MSDK_STRING("                                  LumaKeyEnable=1\n"));
 msdk_printf(MSDK_STRING("                                  LumaKeyMin=250\n"));
 msdk_printf(MSDK_STRING("                                  LumaKeyMax=255\n"));
+msdk_printf(MSDK_STRING("   [-png_comp] - use the first frame of the RGBA sequence as a static picture(png) for composition\n"));
 msdk_printf(MSDK_STRING("   [-cf_disable]                  disable colorfill\n"));
 
 msdk_printf(MSDK_STRING("   Video Enhancement Algorithms\n"));
@@ -1424,6 +1425,10 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                     pParams->compositionParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                     i++;
                 }
+            }
+            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-png_comp")))
+            {
+                pParams->bPNGComp=1;
             }
             // different modes of MFX FRC
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-frc:advanced")))

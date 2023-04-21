@@ -970,6 +970,7 @@ CRawVideoReader::CRawVideoReader()
     m_fSrc = 0;
     m_isPerfMode = false;
     m_Repeat = 0;
+    m_pngComp=0;
     m_pPTSMaker = 0;
     m_initFcc = 0;
 }
@@ -1361,7 +1362,8 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         MSDK_CHECK_POINTER(pData->B, MFX_ERR_NOT_INITIALIZED);
         // there is issue with A channel in case of d3d, so A-ch is ignored
         //MSDK_CHECK_POINTER(pData->A, MFX_ERR_NOT_INITIALIZED);
-
+        if(m_pngComp)
+            fseek(m_fSrc, 0, SEEK_SET);
         ptr = std::min(std::min(pData->R, pData->G), pData->B );
         ptr = ptr + pInfo->CropX + pInfo->CropY * pitch;
 
