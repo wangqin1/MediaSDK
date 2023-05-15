@@ -424,13 +424,13 @@ static bool FillCUQPDataVA(
     if (!bInitialized)
         return false;
 
-    bool bIsDeltaQP = mbqp->Mode;
+    bool bIsDeltaQP = mbqp && mbqp->Mode;
 
     const mfxExtHEVCParam & HEVCParam = ExtBuffer::Get(par);
 
     mfxU32 drBlkW = cuqpMap.m_block_width;  // block size of driver
     mfxU32 drBlkH = cuqpMap.m_block_height;  // block size of driver
-    mfxU16 inBlkSize = mbqp->BlockSize ? (8<<mbqp->BlockSize) : 16;  //input block size
+    mfxU16 inBlkSize = (mbqp && mbqp->BlockSize) ? (8<<mbqp->BlockSize) : 16;  //input block size
     mfxU32 inputW = CeilDiv(HEVCParam.PicWidthInLumaSamples, inBlkSize);
     mfxU32 inputH = CeilDiv(HEVCParam.PicHeightInLumaSamples, inBlkSize);
     bool bInvalid = !mbqp || (!mbqp->QP && !mbqp->DeltaQP) || (mbqp->NumQPAlloc < inputW * inputH);
