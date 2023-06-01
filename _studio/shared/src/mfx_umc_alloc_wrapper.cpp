@@ -20,12 +20,18 @@
 
 #include "umc_defs.h"
 
+#if defined(MFX_VA) && !defined MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+// For setting SFC surface
+#include "umc_va_video_processing.h"
+#endif
+
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_common.h"
 #include "libmfx_core.h"
 #include "mfx_common_int.h"
 #include "mfxfei.h"
 
+#define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
 
 mfx_UMC_MemAllocator::mfx_UMC_MemAllocator():m_pCore(NULL)
 {
@@ -429,6 +435,33 @@ UMC::Status mfx_UMC_FrameAllocator::GetFrameHandle(UMC::FrameMemID memId, void *
     return UMC::UMC_OK;
 }
 
+static mfxStatus SetSurfaceForSFC(VideoCORE& core, mfxFrameSurface1& surf)
+{
+#if defined(MFX_VA) && !defined MFX_DEC_VIDEO_POSTPROCESS_DISABLE
+    // Set surface for SFC
+    UMC::VideoAccelerator * va = nullptr;
+
+    core.GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+    MFX_CHECK_HDL(va);
+
+    auto video_processing_va = va->GetVideoProcessingVA();
+
+    if (video_processing_va && core.GetVAType() == MFX_HW_VAAPI)
+    {
+        mfxHDL surfHDL = {};
+        mfxStatus sts = core.GetExternalFrameHDL(surf.Data. MemId, &surfHDL, false);
+
+        MFX_CHECK_STS(sts);
+        video_processing_va->SetOutputSurface(surfHDL);
+    }
+#else
+    std::ignore = core;
+    std::ignore = surf;
+#endif
+
+    return MFX_ERR_NONE;
+}
+
 UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC::VideoDataInfo * info, uint32_t a_flags)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -502,6 +535,11 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
                 return UMC::UMC_ERR_FAILED;
 
             m_extSurfaces[m_curIndex].isUsed = true;
+
+            if (m_sfcVideoPostProcessing)
+            {
+                SetSurfaceForSFC(*m_pCore, *m_extSurfaces[index].FrameSurface);
+            }
         }
     }
 
