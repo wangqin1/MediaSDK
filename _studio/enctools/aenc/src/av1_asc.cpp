@@ -1185,7 +1185,6 @@ namespace aenc {
             if (m_videoData[i] != nullptr)
                 delete m_videoData[i];
         }
-        delete[] m_videoData;
     }
     void ASC::VidRead_dispose()
     {

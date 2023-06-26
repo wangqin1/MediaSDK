@@ -27,6 +27,11 @@
 #if defined(ENABLE_ADAPTIVE_ENCODE)
 
 mfxStatus AEncInit(mfxHDL* pthis, AEncParam param) {
+
+    if (!pthis) {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
     try {
         *pthis = reinterpret_cast<mfxHDL>(new aenc::AEnc());
         aenc::AEnc* a = reinterpret_cast<aenc::AEnc*>(*pthis);
@@ -44,7 +49,24 @@ mfxStatus AEncInit(mfxHDL* pthis, AEncParam param) {
 
 
 void AEncClose(mfxHDL pthis) {
-    delete reinterpret_cast<aenc::AEnc*>(pthis);
+    if (!pthis) {
+        return;
+    }
+
+    try {
+        aenc::AEnc* a = reinterpret_cast<aenc::AEnc*>(pthis);
+        a->Close();
+        delete a;
+        return;
+    }
+    catch (aenc::Error) {
+        return;
+    }
+    catch (...)
+    {
+        return;
+    }
+    
 }
 
 
