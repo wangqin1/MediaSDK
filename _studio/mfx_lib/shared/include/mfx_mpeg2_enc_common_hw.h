@@ -23,6 +23,7 @@
 
 #include "mfx_common.h"
 #include "mfx_ext_buffers.h"
+#include "mfxbrc.h"
 
 #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
@@ -69,6 +70,8 @@
         bool                    bAllowFieldDCT;
         bool                    bAddEOS;
         bool                    bRawFrames;
+        bool                    bExtBRC;
+        mfxExtBRC*              pExtBRC;
         mfxFrameAllocResponse*  pRecFramesResponse_hw;
         mfxFrameAllocResponse*  pRecFramesResponse_sw;
 

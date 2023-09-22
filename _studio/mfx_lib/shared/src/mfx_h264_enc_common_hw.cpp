@@ -6155,7 +6155,6 @@ void MfxHwH264Encode::SetDefaults(
 
     bool IsEnabledSwBrc = false;
     IsEnabledSwBrc = bRateControlLA(par.mfx.RateControlMethod) || (IsOn(extOpt2->ExtBRC) && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR));
-
     if (par.calcParam.TCBRCTargetFrameSize == 0)
     {
         par.calcParam.TCBRCTargetFrameSize = IsTCBRC(par, hwCaps) ? GetAvgFrameSizeInBytes(par, false) : 0;

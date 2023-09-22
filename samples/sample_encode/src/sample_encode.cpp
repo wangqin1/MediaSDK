@@ -1499,6 +1499,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if((pParams->CodecId == MFX_CODEC_MPEG2) && (pParams->nExtBRC == EXTBRC_ON))
+    {
+        pParams->nAsyncDepth = 1;
+    }
+    
     if (!pParams->EncodeFourCC)
     {
         if (pParams->FileInputFourCC == MFX_FOURCC_UYVY)

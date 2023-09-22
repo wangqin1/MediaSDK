@@ -128,6 +128,8 @@ FullEncode::FullEncode(VideoCORE *core, mfxStatus *sts)
     m_nFrameTasks = 0;
 
     m_pBRC = 0;
+    m_swBRC = 0;
+    m_enabledSwBrc = 0;
     m_nCurrTask   = 0;
     m_pExtTasks    = 0;
     m_runtimeErr = MFX_ERR_NONE;
@@ -223,17 +225,35 @@ mfxStatus FullEncode::ResetImpl()
     MFX_CHECK_STS(sts);  
 
     paramsEx->pRecFramesResponse_hw = m_pFrameStore->GetFrameAllocResponse();
-    
-    if (!m_pBRC)
+    mfxVideoParam* par=&paramsEx->mfxVideoParams;
+    m_enabledSwBrc = paramsEx->bExtBRC && (par->mfx.RateControlMethod == MFX_RATECONTROL_CBR || par->mfx.RateControlMethod == MFX_RATECONTROL_VBR);
+    if(m_enabledSwBrc)
     {
-        m_pBRC = new MPEG2BRC_HW (m_pCore);
-        sts = m_pBRC->Init(&paramsEx->mfxVideoParams);
-        MFX_CHECK_STS(sts);  
+       if(!m_swBRC)
+        {
+            m_swBRC = new MPEG2SWBRC;
+            sts = m_swBRC->Init(*paramsEx);
+            MFX_CHECK_STS(sts);
+        }
+        else{
+            sts =m_swBRC->Reset(*paramsEx);
+            MFX_CHECK_STS(sts); 
+        }
+
     }
     else
     {
-        sts = m_pBRC->Reset(&paramsEx->mfxVideoParams);
-        MFX_CHECK_STS(sts);  
+        if (!m_pBRC)
+        {
+            m_pBRC = new MPEG2BRC_HW (m_pCore);
+            sts = m_pBRC->Init(&paramsEx->mfxVideoParams);
+            MFX_CHECK_STS(sts);  
+        }
+        else
+        {
+            sts = m_pBRC->Reset(&paramsEx->mfxVideoParams);
+            MFX_CHECK_STS(sts);  
+        }
     }
 
     if (!m_pENCODE)
@@ -294,6 +314,11 @@ mfxStatus FullEncode::Close(void)
     {
         m_pBRC->Close();
         delete m_pBRC;
+    }
+    if(m_swBRC)
+    {
+        m_swBRC->Close();
+        delete m_swBRC;
     }
     m_UDBuff.Close();
 
@@ -434,31 +459,40 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
         mfxU8  qp = 0;
         mfxU8 * mbqpdata = 0;
         mfxU32 mbqpNumMB = 0;
-        if (bConstQuant)
+        if(m_enabledSwBrc)
         {
-            m_pBRC->SetQuant(pInternalParams->QP, pInternalParams->FrameType);
-            m_pBRC->SetQuantDCPredAndDelay(&pIntTask->m_FrameParams,&qp);
-
-            if (pParams->bMbqpMode)
+            pIntTask->m_nEncodedOrder = m_pController->GetExeFrameOrder()+1;
+            pIntTask->m_nFrameOrder  = pInternalParams->FrameOrder;
+            pIntTask->InitBRCParams();
+            m_swBRC->GetQp(pIntTask->m_brcFrameParams, pIntTask->m_brcFrameCtrl);
+            m_swBRC->SetQuantDCPredAndDelay(&pIntTask->m_FrameParams,pIntTask->m_brcFrameCtrl.QpY,&qp);
+        }
+        else
+        {
+            if (bConstQuant)
             {
-                const mfxExtMBQP *mbqp = (mfxExtMBQP *)GetExtBuffer(pInternalParams->ExtParam, pInternalParams->NumExtParam, MFX_EXTBUFF_MBQP);
+                m_pBRC->SetQuant(pInternalParams->QP, pInternalParams->FrameType);
+                m_pBRC->SetQuantDCPredAndDelay(&pIntTask->m_FrameParams,&qp);
 
-                mfxU32 wMB = (pParams->mfxVideoParams.mfx.FrameInfo.CropW + 15) / 16;
-                mfxU32 hMB = (pParams->mfxVideoParams.mfx.FrameInfo.CropH + 15) / 16;
-
-                bool isMBQP = mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB;
-
-                if (isMBQP)
+                if (pParams->bMbqpMode)
                 {
-                    mbqpdata = mbqp->QP;
-                    mbqpNumMB = wMB * hMB;
+                    const mfxExtMBQP *mbqp = (mfxExtMBQP *)GetExtBuffer(pInternalParams->ExtParam, pInternalParams->NumExtParam, MFX_EXTBUFF_MBQP);
+
+                    mfxU32 wMB = (pParams->mfxVideoParams.mfx.FrameInfo.CropW + 15) / 16;
+                    mfxU32 hMB = (pParams->mfxVideoParams.mfx.FrameInfo.CropH + 15) / 16;
+
+                    bool isMBQP = mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB;
+
+                    if (isMBQP)
+                    {
+                        mbqpdata = mbqp->QP;
+                        mbqpNumMB = wMB * hMB;
+                    }
                 }
             }
         }
 
-
         MFX_CHECK_STS (m_UDBuff.AddUserData(pInternalParams));
-
         if (mbqpdata)
         {
             sts = m_pENCODE->SubmitFrameMBQP(pIntTask, m_UDBuff.GetUserDataBuffer(), m_UDBuff.GetUserDataSize(), mbqpdata, mbqpNumMB, qp);
@@ -470,7 +504,7 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
 
         MFX_CHECK_STS(sts);
     }
-
+    m_pController->ExeFrameAdd();
     return MFX_ERR_NONE;
 }
 mfxStatus FullEncode::QueryFrame(sExtTask2 *pExtTask)
@@ -498,7 +532,12 @@ mfxStatus FullEncode::QueryFrame(sExtTask2 *pExtTask)
     dataLen = bs->DataLength;
 
     sts = m_pENCODE->QueryFrame(pIntTask);
-
+    if(m_enabledSwBrc)
+    {
+        pIntTask->m_brcFrameParams.CodedFrameSize = pIntTask->m_pBitstream->DataLength;
+        mfxU32 res = m_swBRC->Report(pIntTask->m_brcFrameParams, 0, 0, pIntTask->m_brcFrameCtrl);
+        MFX_CHECK((mfxI32)res != UMC::BRC_ERROR, MFX_ERR_UNDEFINED_BEHAVIOR);
+    }
     if (sts != MFX_WRN_DEVICE_BUSY)
     {
         UMC::AutomaticUMCMutex lock(m_guard);

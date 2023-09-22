@@ -199,8 +199,7 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
         m_sps.Profile = (UCHAR)par->mfxVideoParams.mfx.CodecProfile;
         m_sps.Level = (UCHAR)par->mfxVideoParams.mfx.CodecLevel;
         m_sps.TargetUsage = (UCHAR)par->mfxVideoParams.mfx.TargetUsage;
-
-        m_sps.RateControlMethod = bAllowBRC ? (UCHAR)par->mfxVideoParams.mfx.RateControlMethod: 0;
+        m_sps.RateControlMethod = bAllowBRC ? (par->bExtBRC? (UCHAR)MFX_RATECONTROL_CQP:(UCHAR)par->mfxVideoParams.mfx.RateControlMethod): 0;
         m_sps.MaxBitRate        = (UINT)par->mfxVideoParams.mfx.MaxKbps * multiplier;
         m_sps.MinBitRate        = m_sps.bit_rate;
         m_sps.UserMaxFrameSize  = par->mfxVideoParams.mfx.BufferSizeInKB * 1000 * multiplier;

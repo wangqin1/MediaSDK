@@ -397,8 +397,9 @@ public:
         VideoCORE *                      m_pCore;
         ControllerBase*                  m_pController;
         MFXVideoENCODEMPEG2_HW_DDI*      m_pENCODE;  
-        MPEG2BRC_HW*                     m_pBRC;
-
+        MPEG2BRC_HW*                     m_pBRC; 
+        MPEG2SWBRC*                      m_swBRC;
+        mfxU32                           m_enabledSwBrc;
         FrameStore*                      m_pFrameStore;
         EncodeFrameTask*                 m_pFrameTasks;
         mfxU32                           m_nFrameTasks;

@@ -149,6 +149,7 @@ namespace MPEG2EncoderHW
             ,MFX_EXTBUFF_VIDEO_SIGNAL_INFO
             ,MFX_EXTBUFF_CODING_OPTION2
             ,MFX_EXTBUFF_CODING_OPTION3
+            ,MFX_EXTBUFF_BRC
         };
         mfxU32 num_supported = 0;
 
@@ -1291,6 +1292,14 @@ namespace MPEG2EncoderHW
 
         }
 
+        m_VideoParamsEx.bExtBRC = (extOpt2 && IsOn(extOpt2->ExtBRC));
+
+
+        if(m_VideoParamsEx.bExtBRC)
+        {
+            mfxExtBRC * extBRC = (mfxExtBRC *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_BRC);
+            m_VideoParamsEx.pExtBRC=extBRC;
+        }
         mfxExtCodingOption3 * extOpt3 = (mfxExtCodingOption3 *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
         if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_ON)
         {
@@ -1354,6 +1363,7 @@ namespace MPEG2EncoderHW
 
         m_InputFrameOrder = -1;
         m_OutputFrameOrder= -1;
+        m_ExeFrameOrder   = -1;
         m_BitstreamLen    = 0;
 
         m_VideoParamsEx.bAddEOS = (ext && (ext->EndOfSequence == MFX_CODINGOPTION_ON));

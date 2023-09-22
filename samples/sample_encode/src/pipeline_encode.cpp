@@ -769,7 +769,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // configure the depth of the look ahead BRC if specified in command line
     if (pInParams->nLADepth || pInParams->nMaxSliceSize || pInParams->nMaxFrameSize || pInParams->nBRefType ||
         (pInParams->BitrateLimit && pInParams->CodecId == MFX_CODEC_AVC) ||
-        (pInParams->nExtBRC && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC)) ||
+        (pInParams->nExtBRC && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC || pInParams->CodecId == MFX_CODEC_MPEG2)) ||
         pInParams->IntRefType || pInParams->IntRefCycleSize || pInParams->IntRefQPDelta ||
         pInParams->AdaptiveI || pInParams->AdaptiveB || pInParams->ConstrainedMV)
     {
@@ -783,7 +783,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         if (pInParams->ConstrainedMV)
             codingOption2->DisableDeblockingIdc = 1;
 
-        if (pInParams->nExtBRC != EXTBRC_DEFAULT && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC))
+        if (pInParams->nExtBRC != EXTBRC_DEFAULT && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC|| pInParams->CodecId == MFX_CODEC_MPEG2))
         {
             codingOption2->ExtBRC = (mfxU16)(pInParams->nExtBRC == EXTBRC_OFF ? MFX_CODINGOPTION_OFF : MFX_CODINGOPTION_ON);
         }
@@ -801,7 +801,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
 #if (MFX_VERSION >= 1024)
     // This is for explicit extbrc only. In case of implicit (built-into-library) version - we don't need this extended buffer
-    if (pInParams->nExtBRC == EXTBRC_ON && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC))
+    if (pInParams->nExtBRC == EXTBRC_ON && (pInParams->CodecId == MFX_CODEC_HEVC || pInParams->CodecId == MFX_CODEC_AVC|| pInParams->CodecId == MFX_CODEC_MPEG2))
     {
         auto extBRC = m_mfxEncParams.AddExtBuffer<mfxExtBRC>();
         HEVCExtBRC::Create(*extBRC);
