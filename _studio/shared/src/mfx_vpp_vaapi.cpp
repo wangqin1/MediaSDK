@@ -987,6 +987,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                 break;
             }
 
+            lut3d_param.va_reserved[0] = pParams->lut3DInfo.LutMode;
+
             /* create 3dlut fitler buffer */
             vaSts = vaCreateBuffer((void*)m_vaDisplay,
                                     m_vaContextVPP,

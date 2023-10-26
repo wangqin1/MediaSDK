@@ -1004,6 +1004,13 @@ typedef struct {
 } mfxExtVPPDenoise;
 MFX_PACK_END()
 
+/* 3DLut Mode */
+enum {
+    MFX_3DLUT_MODE_DEFAULT    = 0,
+    MFX_3DLUT_MODE_LOWPOWER   = 1,
+    MFX_3DLUT_MODE_QUALITY    = 2
+};
+
 /*! The mfx3DLutChannelMapping enumerator specifies the channel mapping of 3DLUT. */
 typedef enum {
     MFX_3DLUT_CHANNEL_MAPPING_DEFAULT            = 0,          /*!< Default 3DLUT channel mapping. The library selects the most appropriate 3DLUT channel mapping. */

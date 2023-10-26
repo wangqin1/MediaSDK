@@ -2049,6 +2049,9 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
                 bufSc->VideoBuffer.MemLayout        = m_executeParams.lut3DInfo.MemLayout;
                 bufSc->VideoBuffer.MemId            = m_executeParams.lut3DInfo.MemId;
             }
+
+            bufSc->reserved[0]                  = m_executeParams.lut3DInfo.LutMode;
+
         }
 #if (MFX_VERSION >= 1025)
         else if (MFX_EXTBUFF_VIDEO_SIGNAL_INFO_IN == bufferId)
@@ -5725,6 +5728,7 @@ mfxStatus ConfigureExecuteParams(
                                 {
                                     return MFX_ERR_UNSUPPORTED;
                                 }
+                                executeParams.lut3DInfo.LutMode = ext3DLUT->reserved[0];
                             }
                         }
                     }

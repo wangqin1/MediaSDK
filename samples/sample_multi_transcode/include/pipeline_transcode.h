@@ -251,6 +251,7 @@ namespace TranscodingSample
         PipelineMode eMode;
         PipelineMode eModeExt;
 
+        mfxU32 LutMode;
         mfxU32 FrameNumberPreference; // how many surfaces user wants
         mfxU32 MaxFrameNumber; // maximum frames for transcoding
         mfxU32 numSurf4Comp;

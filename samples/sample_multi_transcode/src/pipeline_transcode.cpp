@@ -3278,6 +3278,8 @@ mfxStatus CTranscodingPipeline::InitVppMfxParams(sInputParams *pInParams)
         m_b3DLutEnable = true;
         m_p3DLutFile = pInParams->str3DLutFile;
 
+        lut->reserved[0] = pInParams->LutMode;
+
         //configure video signal info for input and output
         auto inSignalInfo = m_mfxVppParams.AddExtBuffer<mfxExtVideoSignalInfo>();
         inSignalInfo->Header.BufferId		 = MFX_EXTBUFF_VIDEO_SIGNAL_INFO_IN;

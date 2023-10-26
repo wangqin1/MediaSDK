@@ -376,6 +376,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -vpp_comp_dump <file-name>  Dump of VPP Composition's output into file. Valid if with -vpp_comp* options\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_dump null_render  Disabling rendering after VPP Composition. This is for performance measurements\n"));
     msdk_printf(MSDK_STRING("  -3dlut <file-name>          Enable 3DLUT VPP filter\n"));
+    msdk_printf(MSDK_STRING("  -3dlut_mode <mode> Specifies 3DLUT mode (lowpower/quality)\n"));
 #if MFX_VERSION >= 1022
     msdk_printf(MSDK_STRING("  -dec_postproc               Resize after decoder using direct pipe (should be used in decoder session)\n"));
     msdk_printf(MSDK_STRING("  -single_texture_d3d11       single texture mode for d3d11 allocator \n"));
@@ -1573,6 +1574,21 @@ mfxStatus ParseVPPCmdLine(msdk_char *argv[], mfxU32 argc, mfxU32& index, Transco
         else
         {
             params->bEnable3DLut = false;
+            return MFX_ERR_UNSUPPORTED;
+        }
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-3dlut_mode")))
+    {
+        VAL_CHECK(index+1 == argc, index, argv[index]);
+        index++;
+        if (0 == msdk_strcmp(argv[index], MSDK_STRING("lowpower")) )
+            params->LutMode = MFX_3DLUT_MODE_LOWPOWER;
+        else if (0 == msdk_strcmp(argv[index], MSDK_STRING("quality")) )
+            params->LutMode = MFX_3DLUT_MODE_QUALITY;
+        else
+        {
+            PrintError(NULL, MSDK_STRING("-3dlut_mode \"%s\" is invalid"), argv[index]);
             return MFX_ERR_UNSUPPORTED;
         }
         return MFX_ERR_NONE;

@@ -293,6 +293,7 @@ namespace MfxHwVideoProcessing
             mfxResourceType           BufferType;
             mfx3DLutMemoryLayout      MemLayout;
             mfx3DLutChannelMapping    ChannelMapping;
+            mfxU32                    LutMode;
         };
 
     public:
