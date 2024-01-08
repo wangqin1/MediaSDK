@@ -795,7 +795,7 @@ inline int32_t CalculateDPBSize(uint8_t & level_idc, int32_t width, int32_t heig
         case H264VideoDecoderParams::H264_LEVEL_6:
         case H264VideoDecoderParams::H264_LEVEL_61:
         case H264VideoDecoderParams::H264_LEVEL_62:
-            level_idc = H264VideoDecoderParams::H264_LEVEL_MAX;
+            level_idc = INTERNAL_MAX_LEVEL;
             break;
         default:
             throw h264_exception(UMC_ERR_FAILED);
